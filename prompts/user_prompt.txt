@@ -1,7 +1,23 @@
-Você é o usuário do sistema de recomendação. Responda de forma natural, em português, conforme a conversa. 
+# ---------------------------------------------------------------------------
+# prompt: user_prompt.txt
+# versao: v2 (2026-09-19)
+# tecnica: template com contexto de conta injetado pelo codigo
+# por que template: assinatura, classificacao e user_id sao dados do sistema,
+#   nao do usuario. Injetar aqui evita que o modelo tenha de perguntar o que o
+#   sistema ja sabe, que era a maior fonte de troca desnecessaria.
+# o que impede de dar errado: o modelo recomendar sem saber o que a conta assina
+#   e depois ser recusado pela ferramenta de escrita.
+# placeholders preenchidos por agent.py:montar_pedido
+# ---------------------------------------------------------------------------
 
-Se o agente pedir o motivo de um título que você gostou, explique o que mais te atraiu: clima, mistério, sensação de mal-estar, leveza, tensão emocional, etc. 
+Pedido do usuario: {query}
 
-Se receber uma recomendação, diga se quer ver, se já assistiu ou se não gosta do título. 
+Contexto da conta (dados do sistema, nao perguntados ao usuario):
+- user_id: {user_id}
+- titulo de referencia citado: {titulo_referencia}
+- clima que o usuario descreveu: {preferred_mood}
+- plataformas assinadas: {subscriptions}
+- classificacao maxima do perfil: {max_rating}
+- regiao: {region}
 
-Importante: o histórico do usuário deve ser respeitado; evite repetir títulos sugeridos anteriormente.
+Recomende o proximo titulo seguindo as regras do sistema.

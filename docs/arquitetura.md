@@ -1,4 +1,105 @@
-# Arquitetura v1: Agente de recomendação de próxima série ou filme
+# Arquitetura
+
+> ## ⚠️ Leia este aviso antes do resto do documento
+>
+> Este arquivo tem **duas arquiteturas**, e elas são diferentes de propósito:
+>
+> - a **§0** descreve o que está **implementado na Parte 1**: catálogo em
+>   SQLite local, 4 ferramentas, laço de uma troca. É o que roda hoje, e é o
+>   que o item 4.4 da entrega pede;
+> - a **§1 em diante** descreve a **arquitetura-alvo da Parte 2**: catálogo no
+>   TMDB, 6 ferramentas, conversa de até 6 trocas com refinamento. **Nada disso
+>   está implementado.** O documento foi escrito antes do código, e foi mantido
+>   porque é o plano para a próxima entrega.
+>
+> Onde os dois divergem, vale a §0. O `docs/case.md` descreve a §0.
+
+---
+
+## 0. A arquitetura implementada na Parte 1
+
+```
+                          ENTRADA
+              pedido em texto livre + contexto da conta
+                    (assinatura, classificação, user_id)
+                               |
+                               v
+  +--------------------------------------------------------------+
+  |                    LAÇO  (src/agent.py)                       |
+  |                                                               |
+  |   estado explícito (EstadoAgente)      orçamento              |
+  |     clima_inferido                       max_passos ......  8 |
+  |     candidatos_vistos                    max_ferramentas . 10 |
+  |     titulos_recusados_pela_escrita       max_tokens ..... 12k |
+  |     passos / chamadas / tokens                                |
+  |                                                               |
+  |   a cada volta:                                               |
+  |     1. orçamento estourou? -> PARA e registra o motivo        |
+  |     2. pede a próxima ação ao MOTOR                           |
+  |     3. executa a ferramenta, registra na trajetória           |
+  |     4. devolve o resultado (ou o erro) ao MOTOR               |
+  +---------------------------+-----------------------------------+
+                              |
+              +---------------+----------------+
+              |                                |
+              v                                v
+   +---------------------+         +--------------------------+
+   |  MotorModelo        |         |  MotorHeuristico         |
+   |  (src/motores.py)   |         |  (src/motores.py)        |
+   |                     |         |                          |
+   |  DECIDE: qual       |         |  regras fixas, sem LLM   |
+   |  ferramenta chamar, |         |  só para demonstrar o    |
+   |  qual clima buscar, |         |  laço sem chave de API   |
+   |  qual candidato     |         |  (carimbado no log)      |
+   |  escolher           |         |                          |
+   |  via tool calling   |         |                          |
+   +---------------------+         +--------------------------+
+              |
+              v
+  +--------------------------------------------------------------+
+  |               FERRAMENTAS  (src/ferramentas.py)               |
+  |    erro volta como DADO: {erro, detalhe, como_corrigir}       |
+  |                                                               |
+  |   consultar_titulo ........ leitura                           |
+  |   buscar_candidatos ....... leitura  <- filtra aqui, em CÓDIGO|
+  |   consultar_historico ..... leitura                           |
+  |   registrar_recomendacao .. ESCRITA  <- revalida 3 invariantes|
+  +---------------------------+-----------------------------------+
+                              |
+                              v
+  +--------------------------------------------------------------+
+  |          CAMADA DE ACESSO  (src/catalogo_db.py)               |
+  |          SQLite: dados/catalogo.db                            |
+  |          tabelas: titulos, historico                          |
+  |          -> na Parte 2 isto vira servidor MCP                 |
+  +--------------------------------------------------------------+
+
+  CONDIÇÕES DE PARADA (todas registradas em motivo_da_parada):
+    resposta_final ................ o motor devolveu o JSON
+    orcamento_passos_estourado .... > 8 voltas
+    orcamento_ferramentas_estourado > 10 chamadas
+    orcamento_tokens_estourado .... > 12.000 tokens
+    erro_do_modelo ................ o provedor falhou (NÃO é escondido)
+
+  VERIFICAÇÃO (fora do laço, src/verificador.py):
+    logs/demo_runs.json  x  gabarito de dados/cases.json
+    + 4 invariantes conferidas contra o banco
+    + --autoteste prova que o verificador não é vazio
+```
+
+### Onde está a decisão que justifica um agente, e não um workflow
+
+Em **dois pontos**, ambos no `MotorModelo`, e ambos impossíveis de resolver com um `if`:
+
+**(1) Qual clima buscar, quando a referência contradiz o pedido.** No caso `divergencia_usuario_vs_sistema` o usuário cita Severance — que o catálogo marca como `mal_estar, misterio` — e no mesmo texto pede "algo leve". Um workflow tem que escolher, na hora de escrever o código, se busca pelo clima da referência ou pelo texto do pedido; qualquer das duas escolhas erra metade dos casos. É o modelo que lê as duas coisas e decide qual vence, em tempo de execução, sobre um espaço de climas que não é uma lista fechada.
+
+**(2) O que fazer quando a ferramenta falha.** No caso `registro_inexistente`, `consultar_titulo` devolve `{"erro": "registro_inexistente", ...}`. A resposta certa depende do que falhou: se o título de referência não existe, encerrar sem inventar; se a lista de candidatos veio vazia, encerrar sem relaxar filtro; se a escrita foi recusada, tentar o próximo candidato. São três respostas diferentes para três erros, decididas a partir do **resultado intermediário**, não da entrada — que é exatamente o que um roteador, cuja rota é fixada na entrada, não faz.
+
+Todo o resto do desenho é código, e deve continuar sendo. O filtro por assinatura, a classificação, o histórico, a validação da escrita e as condições de parada são determinísticos: colocá-los no modelo seria pagar tokens por algo que um `WHERE` resolve, e abrir mão de garantia.
+
+---
+
+## 1. Arquitetura-alvo da Parte 2 (NÃO implementada)
 
 ## 1. Entrada
 

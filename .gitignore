@@ -1,4 +1,15 @@
+# segredos
 .env
+
+# ambiente
 .venv/
 __pycache__/
 *.pyc
+
+# banco derivado: reconstruido a cada execucao a partir de
+# dados/streaming_catalog.json e dados/historico_seed.jsonl
+dados/catalogo.db
+
+# assistente de codigo: instrucoes e estado locais, fora da entrega
+CLAUDE.md
+.claude/

@@ -1,0 +1,308 @@
+{
+  "ministral-3b-2512": [
+    {
+      "caso": "caso_simples",
+      "esperado": "Dark",
+      "obtido": "Dark",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 3,
+      "tokens": 5141,
+      "parada": "resposta_final",
+      "segundos": 2.42,
+      "decisao_bruta": {
+        "status": "recommendation",
+        "title": "Dark",
+        "reason": "O clima de mal-estar constante e inquietacao presente em 'Severance' é reforçado por eventos que criam um senso de tempo distorcido e mistério, como em 'Dark'.",
+        "platform": "Netflix",
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": "registrar_recomendacao"
+      }
+    },
+    {
+      "caso": "divergencia_usuario_vs_sistema",
+      "esperado": "The Office",
+      "obtido": "no_match",
+      "acertou": false,
+      "violacoes": [],
+      "passos": 3,
+      "tokens": 5211,
+      "parada": "resposta_final",
+      "segundos": 2.02,
+      "decisao_bruta": {
+        "status": "no_match",
+        "title": null,
+        "reason": "O clima 'leve e fácil' não coincide com o clima do título de referência ('mal estar e misterio'). O candidato mais próximo ('The Office') tem um clima sarcástico e cotidiano, mas não atende ao pedido de leveza sem complexidade emocional.",
+        "platform": null,
+        "confidence": "medium",
+        "missing_info": "Confirme se o usuário deseja um título com humor absurdo e cotidiano ('The Office') ou se deve buscar outros filtros para um clima mais neutro e sem tensão.",
+        "next_step": "peça ao usuário para ajustar o clima ou confirmar se deseja explorar 'The Office' como alternativa."
+      }
+    },
+    {
+      "caso": "registro_inexistente",
+      "esperado": "no_match",
+      "obtido": "no_match",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 2,
+      "tokens": 3265,
+      "parada": "resposta_final",
+      "segundos": 1.36,
+      "decisao_bruta": {
+        "status": "no_match",
+        "title": null,
+        "reason": "O titulo de referencia 'O Enigma de Kessler' não foi encontrado no catalogo. Verifique se o nome está correto.",
+        "platform": null,
+        "confidence": "low",
+        "missing_info": "Nome exato do titulo de referencia confirmado pelo usuario",
+        "next_step": "Confirme se o titulo de referencia é realmente 'O Enigma de Kessler' ou ajuste o pedido."
+      }
+    },
+    {
+      "caso": "nao_dispara_acao",
+      "esperado": "no_match",
+      "obtido": "no_match",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 3,
+      "tokens": 5153,
+      "parada": "resposta_final",
+      "segundos": 1.88,
+      "decisao_bruta": {
+        "status": "no_match",
+        "title": null,
+        "reason": "Nenhum candidato do catalogo atende ao clima de 'mal-estar e misterio' com plataformas assinadas (Prime Video) e classificacao maxima 10+.",
+        "platform": null,
+        "confidence": "low",
+        "missing_info": "Preciso confirmar se o usuario deseja explorar alternativas com plataformas diferentes ou ajustar o limite de classificacao.",
+        "next_step": "pegar confirmacao do usuario para ajustar critérios"
+      }
+    },
+    {
+      "caso": "nao_repete_recomendacao",
+      "esperado": "The OA",
+      "obtido": "The OA",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 4,
+      "tokens": 5310,
+      "parada": "resposta_final",
+      "segundos": 2.54,
+      "decisao_bruta": {
+        "status": "recommendation",
+        "title": "The OA",
+        "reason": "A série combina mistério e estranheza com um ambiente surreal e tenso, alinhado ao pedido do usuário para maratonar hoje à noite.",
+        "platform": "Netflix",
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": "Nenhuma ação adicional necessária; a recomendação foi registrada com sucesso."
+      }
+    }
+  ],
+  "ministral-8b-2512": [
+    {
+      "caso": "caso_simples",
+      "esperado": "Dark",
+      "obtido": "Dark",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 4,
+      "tokens": 7203,
+      "parada": "resposta_final",
+      "segundos": 26.41,
+      "decisao_bruta": {
+        "status": "recommendation",
+        "title": "Dark",
+        "reason": "Dark mantém um mal-estar constante por meio de mistérios temporais e eventos perturbadores, assim como Severance, com avaliações destacando a inquietação como ponto forte.",
+        "platform": "Netflix",
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": null
+      }
+    },
+    {
+      "caso": "divergencia_usuario_vs_sistema",
+      "esperado": "The Office",
+      "obtido": "The Office",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 4,
+      "tokens": 7281,
+      "parada": "resposta_final",
+      "segundos": 15.27,
+      "decisao_bruta": {
+        "status": "recommendation",
+        "title": "The Office",
+        "reason": "A série tem clima leve e humor cotidiano, sem elementos complexos ou reflexivos, como solicitado. Além disso, está disponível na Netflix, dentro da assinatura e classificação permitida (14+).",
+        "platform": "Netflix",
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": "nenhuma"
+      }
+    },
+    {
+      "caso": "registro_inexistente",
+      "esperado": "no_match",
+      "obtido": "no_match",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 2,
+      "tokens": 3258,
+      "parada": "resposta_final",
+      "segundos": 1.73,
+      "decisao_bruta": {
+        "status": "no_match",
+        "title": null,
+        "reason": "O titulo 'O Enigma de Kessler' não foi encontrado no catalogo. Por favor, confirme o nome exato do filme ou série que você mencionou.",
+        "platform": null,
+        "confidence": "high",
+        "missing_info": "Nome correto do título de referência",
+        "next_step": "Solicitar ao usuário que confirme o nome do título citado"
+      }
+    },
+    {
+      "caso": "nao_dispara_acao",
+      "esperado": "no_match",
+      "obtido": "no_match",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 3,
+      "tokens": 5147,
+      "parada": "resposta_final",
+      "segundos": 2.4,
+      "decisao_bruta": {
+        "status": "no_match",
+        "title": null,
+        "reason": "Nenhum título disponível na assinatura do usuário (Prime Video), com classificação adequada (10+) e que atenda ao clima de mal-estar e mistério solicitado.",
+        "platform": null,
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": "Verificar se o usuário deseja ajustar os critérios ou confirmar o nome do título de referência citado ('Severance')."
+      }
+    },
+    {
+      "caso": "nao_repete_recomendacao",
+      "esperado": "The OA",
+      "obtido": "The OA",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 3,
+      "tokens": 5325,
+      "parada": "resposta_final",
+      "segundos": 3.86,
+      "decisao_bruta": {
+        "status": "recommendation",
+        "title": "The OA",
+        "reason": "A serie mistura um enredo misterioso com elementos surrealistas e uma narrativa filosófica, gerando uma estranheza envolvente e uma tensão psicológica que se alinha ao clima pedido. As avaliações destacam a atmosfera 'cativante' e 'desconfortante', perfeita para uma maratona.",
+        "platform": "Netflix",
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": "nenhuma"
+      }
+    }
+  ],
+  "ministral-14b-2512": [
+    {
+      "caso": "caso_simples",
+      "esperado": "Dark",
+      "obtido": "Dark",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 4,
+      "tokens": 7232,
+      "parada": "resposta_final",
+      "segundos": 4.26,
+      "decisao_bruta": {
+        "status": "recommendation",
+        "title": "Dark",
+        "reason": "'Dark' também é elogiado por criar uma sensação de mal-estar constante e um clima de mistério, assim como 'Severance', com avaliações destacando a inquietação como ponto forte.",
+        "platform": "Netflix",
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": "nenhuma"
+      }
+    },
+    {
+      "caso": "divergencia_usuario_vs_sistema",
+      "esperado": "The Office",
+      "obtido": "The Office",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 4,
+      "tokens": 7293,
+      "parada": "resposta_final",
+      "segundos": 5.22,
+      "decisao_bruta": {
+        "status": "recommendation",
+        "title": "The Office",
+        "reason": "O usuário pediu algo leve e sem exigir reflexão profunda, e 'The Office' é uma comédia cotidiana com humor absurdo e situações simples, perfeita para evitar pensamentos complexos, como evidenciado pelo clima 'leve' e avaliações que destacam seu tom descontraído.",
+        "platform": "Netflix",
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": "nenhuma"
+      }
+    },
+    {
+      "caso": "registro_inexistente",
+      "esperado": "no_match",
+      "obtido": "no_match",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 2,
+      "tokens": 3246,
+      "parada": "resposta_final",
+      "segundos": 2.48,
+      "decisao_bruta": {
+        "status": "no_match",
+        "title": null,
+        "reason": null,
+        "platform": null,
+        "confidence": null,
+        "missing_info": "Confirmação do nome exato do título 'O Enigma de Kessler' ou outro título de referência válido.",
+        "next_step": "Solicitar ao usuário que verifique o nome do título ou indique outro título de referência."
+      }
+    },
+    {
+      "caso": "nao_dispara_acao",
+      "esperado": "no_match",
+      "obtido": "no_match",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 3,
+      "tokens": 5148,
+      "parada": "resposta_final",
+      "segundos": 3.6,
+      "decisao_bruta": {
+        "status": "no_match",
+        "title": null,
+        "reason": "Não há títulos disponíveis na assinatura do usuário (Prime Video) que atendam simultaneamente ao clima de mal-estar e mistério, com classificação 10+ ou inferior.",
+        "platform": null,
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": "Verificar se o usuário está disposto a ajustar os critérios (por exemplo, aceitar uma classificação diferente ou explorar outras plataformas)"
+      }
+    },
+    {
+      "caso": "nao_repete_recomendacao",
+      "esperado": "The OA",
+      "obtido": "The OA",
+      "acertou": true,
+      "violacoes": [],
+      "passos": 3,
+      "tokens": 5324,
+      "parada": "resposta_final",
+      "segundos": 4.29,
+      "decisao_bruta": {
+        "status": "recommendation",
+        "title": "The OA",
+        "reason": "A série apresenta um mistério complexo e uma atmosfera surreal, com elementos de estranheza e tensão que se alinham ao clima de 'misterio e estranheza' solicitado. As avaliações destacam sua capacidade de criar desconforto e intriga, ideais para uma maratona.",
+        "platform": "Netflix",
+        "confidence": "high",
+        "missing_info": "nenhuma",
+        "next_step": "confirmar se o usuário deseja iniciar a maratona ou ajustar a recomendação"
+      }
+    }
+  ]
+}

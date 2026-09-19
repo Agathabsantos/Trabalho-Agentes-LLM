@@ -1,259 +1,304 @@
+"""Agente de recomendacao — Parte 1.
+
+Laco com estado explicito, orcamento aplicado, terminacao registrada e log de
+trajetoria (requisito 4.1 da entrega).
+
+Uso:
+    python src/agent.py                  # roda os casos com o MODELO (exige chave)
+    python src/agent.py --sem-modelo     # roda com a heuristica, sem chamar LLM
+    python src/agent.py --caso caso_simples
+"""
+
+import argparse
 import json
 import os
+import sys
+import time
+from dataclasses import dataclass, field, asdict
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from catalogo_db import CatalogoDB, construir_banco  # noqa: E402
+from ferramentas import ESQUEMA_FERRAMENTAS, Ferramentas  # noqa: E402
+from motores import MotorHeuristico, MotorModelo, construir_client  # noqa: E402
 
 try:
     from dotenv import load_dotenv
-except Exception:  # pragma: no cover
+except ImportError:
     load_dotenv = None
 
-try:
-    from openai import OpenAI
-except Exception:  # pragma: no cover
-    OpenAI = None
-
-
 ROOT = Path(__file__).resolve().parent.parent
-CATALOG_PATH = ROOT / "dados" / "streaming_catalog.json"
-CASES_PATH = ROOT / "dados" / "cases.json"
 PROMPTS_DIR = ROOT / "prompts"
+CASES_PATH = ROOT / "dados" / "cases.json"
+LOG_PATH = ROOT / "logs" / "demo_runs.json"
 
 if load_dotenv is not None:
     load_dotenv(ROOT / ".env")
 
-
-def load_catalog():
-    with CATALOG_PATH.open("r", encoding="utf-8") as f:
-        return json.load(f)["titles"]
-
-
-def load_cases():
-    with CASES_PATH.open("r", encoding="utf-8") as f:
-        return json.load(f)
+# Orcamento. Diferente da versao anterior, estes tetos sao COMPARADOS a cada
+# volta do laco — nao apenas copiados para o log.
+ORCAMENTO = {"max_passos": 8, "max_chamadas_ferramenta": 10, "max_tokens": 12000}
 
 
-def build_client():
-    if OpenAI is None:
-        return None
-    return OpenAI(
-        base_url=os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1"),
-        api_key=os.environ.get("OPENAI_API_KEY", "dummy-key"),
+@dataclass
+class EstadoAgente:
+    """Estado explicito do laco. O que precisa sobreviver de um passo ao outro
+    mora aqui, e NAO dentro da lista de mensagens do modelo."""
+
+    caso_id: str
+    user_id: str
+    titulo_referencia: str = None
+    clima_inferido: str = None
+    candidatos_vistos: list = field(default_factory=list)
+    titulos_recusados_pela_escrita: list = field(default_factory=list)
+    passos: int = 0
+    chamadas_ferramenta: int = 0
+    tokens: int = 0
+    erros_de_ferramenta: int = 0
+    motivo_da_parada: str = None
+
+
+def carregar_prompt(nome: str) -> str:
+    return (PROMPTS_DIR / nome).read_text(encoding="utf-8")
+
+
+def montar_pedido(caso: dict) -> str:
+    """Preenche o template de mensagem do usuario com o contexto da conta."""
+    template = carregar_prompt("user_prompt.txt")
+    return template.format(
+        query=caso["query"],
+        titulo_referencia=caso.get("titulo_referencia") or "(nenhum informado)",
+        preferred_mood=caso.get("preferred_mood") or "(nao informado)",
+        subscriptions=", ".join(caso.get("subscriptions", [])),
+        max_rating=caso.get("max_rating", "18+"),
+        user_id=caso["user_id"],
+        region=caso.get("region", "BR"),
     )
 
 
-def load_prompt(name: str) -> str:
-    return (PROMPTS_DIR / name).read_text(encoding="utf-8")
+def executar_caso(caso: dict, usar_modelo: bool, db: CatalogoDB) -> dict:
+    estado = EstadoAgente(
+        caso_id=caso["id"],
+        user_id=caso["user_id"],
+        titulo_referencia=caso.get("titulo_referencia"),
+    )
+    trajetoria = []
+    ferramentas = Ferramentas(db, caso)
+    pedido = montar_pedido(caso)
 
+    if usar_modelo:
+        motor = MotorModelo(
+            client=construir_client(),
+            modelo=os.environ.get("MODEL_NAME", "ministral-8b-2512"),
+            system_prompt=carregar_prompt("system.txt"),
+            esquema_ferramentas=ESQUEMA_FERRAMENTAS,
+            temperatura=float(os.environ.get("TEMPERATURE") or "0.2"),
+        )
+        motor.adicionar_pedido_do_usuario(pedido)
+    else:
+        motor = MotorHeuristico(caso)
 
-def catalog_search(query, catalog, user_context):
-    """Ferramenta 1: consulta ao catálogo local em disco, como software tradicional."""
-    q = query.lower()
-    preferred = str(user_context.get("preferred_mood", "")).lower()
-    combined = f"{q} {preferred}".lower()
-    results = []
-    for item in catalog:
-        platforms_overlap = set(user_context.get("subscriptions", [])) & set(item["platforms"])
-        if not platforms_overlap:
+    resposta_final = None
+    mensagens_locais = []
+
+    while True:
+        # --- orcamento: verificado ANTES de cada passo ---
+        if estado.passos >= ORCAMENTO["max_passos"]:
+            estado.motivo_da_parada = "orcamento_passos_estourado"
+            break
+        if estado.chamadas_ferramenta >= ORCAMENTO["max_chamadas_ferramenta"]:
+            estado.motivo_da_parada = "orcamento_ferramentas_estourado"
+            break
+        if estado.tokens >= ORCAMENTO["max_tokens"]:
+            estado.motivo_da_parada = "orcamento_tokens_estourado"
+            break
+
+        estado.passos += 1
+        inicio = time.time()
+
+        try:
+            acao = motor.proxima_acao(mensagens_locais)
+        except Exception as exc:  # falha do provedor: registrada, nunca escondida
+            estado.motivo_da_parada = "erro_do_modelo"
+            trajetoria.append(
+                {
+                    "passo": estado.passos,
+                    "ferramenta": None,
+                    "args": None,
+                    "resultado": None,
+                    "erro": f"{type(exc).__name__}: {exc}",
+                    "ms": round((time.time() - inicio) * 1000),
+                }
+            )
+            break
+
+        if usar_modelo:
+            estado.tokens = motor.tokens_usados
+
+        if acao["tipo"] == "final":
+            resposta_final = acao["resposta"]
+            estado.motivo_da_parada = "resposta_final"
+            trajetoria.append(
+                {
+                    "passo": estado.passos,
+                    "ferramenta": None,
+                    "args": None,
+                    "resultado": resposta_final,
+                    "erro": None,
+                    "ms": round((time.time() - inicio) * 1000),
+                }
+            )
+            break
+
+        if acao["tipo"] == "contrato_violado":
+            estado.erros_de_ferramenta += 1
+            trajetoria.append(
+                {
+                    "passo": estado.passos,
+                    "ferramenta": None,
+                    "args": None,
+                    "resultado": {"bruto": acao["bruto"]},
+                    "erro": "contrato_de_saida_violado",
+                    "ms": round((time.time() - inicio) * 1000),
+                }
+            )
+            motor.mensagens.append({"role": "user", "content": acao["como_corrigir"]})
             continue
-        if item["rating"] and user_context.get("max_rating"):
-            rating_order = {"10+": 10, "12+": 12, "14+": 14, "16+": 16, "18+": 18}
-            if rating_order.get(item["rating"], 0) > rating_order.get(user_context.get("max_rating"), 0):
-                continue
-        score = 0
-        item_tokens = set(item["title"].lower().split())
-        score += 4 if any(token in combined for token in item_tokens) else 0
-        for mood in item["mood"]:
-            mood_tokens = set(mood.lower().replace("-", " ").split("_"))
-            if mood in combined or any(token in combined for token in mood_tokens):
-                score += 3
-        for word in ["mistério", "estranho", "mal-estar", "leve", "tensão", "ansiedade", "intenso", "emocional", "misterio", "estranho", "mal-estar", "leve", "tensao"]:
-            if word in combined:
-                score += 1
-        if score:
-            results.append({"item": item, "score": score})
-    results.sort(key=lambda x: x["score"], reverse=True)
-    return [entry["item"] for entry in results[:5]]
 
+        # --- chamada de ferramenta ---
+        nome = acao["nome"]
+        args = acao.get("args", {})
+        funcao = getattr(ferramentas, nome, None)
+        if funcao is None:
+            resultado = {
+                "erro": "ferramenta_inexistente",
+                "detalhe": f"'{nome}' nao existe",
+                "como_corrigir": "use apenas: " + ", ".join(
+                    f["function"]["name"] for f in ESQUEMA_FERRAMENTAS
+                ),
+            }
+        else:
+            resultado = funcao(**args)
 
-def check_availability(item, user_context):
-    """Ferramenta 2: valida se o título pode ser consumido pela conta do usuário."""
-    subscribed = set(user_context.get("subscriptions", []))
-    available = sorted(set(item["platforms"]) & subscribed)
-    return available
+        estado.chamadas_ferramenta += 1
+        if isinstance(resultado, dict):
+            if resultado.get("erro"):
+                estado.erros_de_ferramenta += 1
+                if resultado["erro"] in ("fora_da_assinatura", "classificacao_incompativel",
+                                          "recomendacao_repetida"):
+                    estado.titulos_recusados_pela_escrita.append(args.get("titulo"))
+            if nome == "buscar_candidatos" and resultado.get("candidatos"):
+                estado.clima_inferido = args.get("clima")
+                estado.candidatos_vistos = [c["titulo"] for c in resultado["candidatos"]]
 
+        trajetoria.append(
+            {
+                "passo": estado.passos,
+                "ferramenta": nome,
+                "args": args,
+                "resultado": resultado,
+                "erro": resultado.get("erro") if isinstance(resultado, dict) else None,
+                "ms": round((time.time() - inicio) * 1000),
+            }
+        )
 
-def record_decision(user_id, title, status):
-    """Ferramenta 3: escrita local para registrar a decisão de recomendação."""
-    history_path = ROOT / "dados" / "history.jsonl"
-    history_path.parent.mkdir(exist_ok=True)
-    entry = {"user_id": user_id, "title": title, "status": status}
-    with history_path.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-    return {"written": True, "entry": entry}
+        mensagens_locais.append({"ferramenta": nome, "args": args, "resultado": resultado})
+        if usar_modelo:
+            motor.adicionar_resultado_de_ferramenta(acao["tool_call_id"], nome, resultado)
 
-
-def fallback_model_response(case, match):
-    # Técnica: zero-shot + contrato de saída em JSON + regra de segurança.
-    # Esta etapa impede que o sistema invente recomendação fora da assinatura ou sem evidência.
-    # O contrato exige status, title, reason, platform, confidence, missing_info e next_step.
-    # O que essa etapa impede de dar errado: recomendações sem contexto, sem catálogo e sem verificação.
-    if match is None:
-        return {
+    if resposta_final is None:
+        resposta_final = {
             "status": "no_match",
             "title": None,
-            "reason": "Nenhum título foi encontrado nas assinaturas e na intenção do usuário.",
+            "reason": f"O agente parou por '{estado.motivo_da_parada}' antes de concluir.",
             "platform": None,
             "confidence": "low",
-            "missing_info": "Não há candidato compatível com o clima solicitado.",
-            "next_step": "Pedir refinamento ou indicar que a busca precisa sair do catálogo assinado."
+            "missing_info": "a execucao nao chegou a uma decisao",
+            "next_step": "encaminhar para um humano",
         }
 
-    if case["id"] == "divergence_user_vs_system":
-        title = "The Office"
-    elif case["id"] == "no_action":
-        title = "Servant"
-    else:
-        title = match["title"]
-
-    reason_map = {
-        "Dark": "O clima de mal-estar constante e o mistério perseguem a sensação de estranheza que o usuário descreveu, mais do que o gênero em si.",
-        "The Office": "A recomendação combina com a intenção de leveza e descontração, mesmo que a referência em Severance seja mais intensa.",
-        "Servant": "A série mantém a tensão e a sensação de desconforto, mantendo a mesma intenção emocional da referência sem exigir custo extra.",
-    }
-
     return {
-        "status": "recommendation",
-        "title": title,
-        "reason": reason_map.get(title, "Combina com a ambiência descrita pelo usuário e está na assinatura disponível."),
-        "platform": "Netflix" if title == "Dark" else "Apple TV+" if title == "Servant" else "Netflix",
-        "confidence": "medium",
-        "missing_info": "Nenhuma informação pendente na base simulada com dados do caso.",
-        "next_step": "Aguardar confirmação do usuário antes de registrar a ação final."
+        "case_id": caso["id"],
+        "descricao": caso.get("descricao"),
+        "query": caso["query"],
+        "motor": motor.nome,
+        "modelo": os.environ.get("MODEL_NAME") if usar_modelo else None,
+        "orcamento": ORCAMENTO,
+        "estado_final": asdict(estado),
+        "motivo_da_parada": estado.motivo_da_parada,
+        "trajetoria": trajetoria,
+        "decision": resposta_final,
+        "status": resposta_final.get("status"),
     }
 
 
-def call_model_with_prompt(case, system_prompt):
-    """Chamada do modelo usando a API openai, com fallback defensivo para ambiente sem credenciais ou sem internet."""
-    # Técnica: zero-shot com contrato rigoroso de saída em JSON.
-    # A etapa proíbe a recomendação fora do catálogo assinado e exige que o modelo responda
-    # em um formato que o código consiga validar sem ambiguidade.
-    # O que essa etapa impede de dar errado: resposta textual livre que o código não consegue parsear.
-    client = build_client()
-    if client is None:
-        return None
+def checar_pre_requisitos():
+    """Falha cedo e com mensagem clara, em vez de traceback no meio da execucao.
 
-    user_text = (
-        f"Consulta: {case['query']}\n"
-        f"Assinaturas: {case['subscriptions']}\n"
-        f"Classificação máxima: {case['max_rating']}\n"
-        f"Região: {case['region']}\n"
-        f"Intenção: recomendar um título sem repetir histórico e sem sair da assinatura."
-    )
-
+    A versao anterior escondia esta falha num `except Exception: pass` e caia
+    num fallback com respostas fixas — foi assim que os logs passaram a parecer
+    saida do modelo sem nunca ter havido uma chamada. Aqui a falha e explicita.
+    """
+    problemas = []
     try:
-        response = client.responses.create(
-            model=os.environ.get("MODEL_NAME", "gpt-4.1-mini"),
-            input=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_text},
-            ],
-            temperature=0.2,
-        )
-        text = getattr(response, "output_text", "")
-        if not text:
-            return None
-        return json.loads(text)
-    except Exception:
-        return None
-
-
-def run_case(case):
-    catalog = load_catalog()
-    system_prompt = load_prompt("system.txt")
-    trajectory = []
-    budget = {"max_steps": 4, "max_tool_calls": 4, "token_budget": 1200}
-
-    # 1. busca local por candidatos compatíveis
-    search_results = catalog_search(case["query"], catalog, case)
-    trajectory.append({"tool": "catalog_search", "args": {"query": case["query"], "subscriptions": case["subscriptions"]}, "result": [item["title"] for item in search_results]})
-    if not search_results:
-        model_response = {"status": "no_match", "title": None}
-        trajectory.append({"tool": "termination", "args": {"reason": "no candidate in subscribed catalog"}, "result": "stop"})
-        return {
-            "case_id": case["id"],
-            "query": case["query"],
-            "budget": budget,
-            "trajectory": trajectory,
-            "decision": model_response,
-            "status": "no_match",
-        }
-
-    # 2. validacao das plataformas e ranking por compatibilidade
-    candidates = []
-    for item in search_results:
-        available = check_availability(item, case)
-        if available:
-            candidates.append({"title": item["title"], "platform": available[0], "reason": item["synopsis"]})
-    trajectory.append({"tool": "check_availability", "args": {"candidates": [item["title"] for item in search_results]}, "result": candidates})
-
-    match = candidates[0] if candidates else None
-    if match is None:
-        model_response = {"status": "no_match", "title": None}
-        trajectory.append({"tool": "termination", "args": {"reason": "no available platform"}, "result": "stop"})
-        return {
-            "case_id": case["id"],
-            "query": case["query"],
-            "budget": budget,
-            "trajectory": trajectory,
-            "decision": model_response,
-            "status": "no_match",
-        }
-
-    # Regra de negócio do caso: quando o caso especifica expectativa de sem match, não se recomenda nada.
-    if case.get("expected_status") == "no_match":
-        model_response = {"status": "no_match", "title": None, "reason": "Não há registro válido compatível com o caso solicitado.", "platform": None, "confidence": "low", "missing_info": "O identificador ou o título pedido não existe no catálogo do domínio.", "next_step": "Pedir refinamento ou esclarecer o pedido antes de tentar outra recomendação."}
-        trajectory.append({"tool": "termination", "args": {"reason": "expected no_match from domain case"}, "result": "stop"})
-        return {
-            "case_id": case["id"],
-            "query": case["query"],
-            "budget": budget,
-            "trajectory": trajectory,
-            "decision": model_response,
-            "status": "no_match",
-        }
-
-    # 3. chamada do modelo; se a API falha, usa fallback determinístico
-    model_response = call_model_with_prompt(case, system_prompt)
-    if model_response is None:
-        model_response = fallback_model_response(case, next(item for item in catalog if item["title"] == match["title"]))
-    trajectory.append({"tool": "model_response", "args": {"title": match["title"]}, "result": model_response})
-
-    # 4. escrita do histórico e termino
-    decision = model_response.get("status", "recommendation")
-    if decision == "recommendation" and model_response.get("title"):
-        log_record = record_decision(case["user_id"], model_response["title"], "recommendation")
-        trajectory.append({"tool": "record_decision", "args": {"user_id": case["user_id"], "title": model_response["title"]}, "result": log_record})
-    else:
-        trajectory.append({"tool": "termination", "args": {"reason": "no recommendation"}, "result": "stop"})
-
-    return {
-        "case_id": case["id"],
-        "query": case["query"],
-        "budget": budget,
-        "trajectory": trajectory,
-        "decision": model_response,
-        "status": model_response.get("status", "recommendation"),
-    }
+        import openai  # noqa: F401
+    except ImportError:
+        problemas.append("a biblioteca `openai` nao esta instalada  ->  pip install -r requirements.txt")
+    if not os.environ.get("OPENAI_API_KEY"):
+        problemas.append("OPENAI_API_KEY nao esta definida       ->  cp .env.example .env e preencha")
+    if not problemas:
+        return
+    print("Nao da para rodar com o modelo:\n", file=sys.stderr)
+    for problema in problemas:
+        print(f"  - {problema}", file=sys.stderr)
+    print("\nPara ver o laco funcionando sem o modelo (nao vale para a entrega):", file=sys.stderr)
+    print("  python src/agent.py --sem-modelo\n", file=sys.stderr)
+    sys.exit(2)
 
 
 def main():
-    cases = load_cases()
-    runs = [run_case(case) for case in cases]
-    out_path = ROOT / "logs" / "demo_runs.json"
-    out_path.parent.mkdir(exist_ok=True)
-    with out_path.open("w", encoding="utf-8") as f:
-        json.dump(runs, f, ensure_ascii=False, indent=2)
-    print(f"Executadas {len(runs)} simulações. Log em {out_path}")
+    parser = argparse.ArgumentParser(description="Agente de recomendacao — Parte 1")
+    parser.add_argument("--sem-modelo", action="store_true",
+                        help="roda a politica heuristica, sem chamar o LLM")
+    parser.add_argument("--caso", help="roda apenas um caso, pelo id")
+    args = parser.parse_args()
+
+    usar_modelo = not args.sem_modelo
+    if usar_modelo:
+        checar_pre_requisitos()
+    construir_banco()
+
+    casos = json.loads(CASES_PATH.read_text(encoding="utf-8"))
+    if args.caso:
+        casos = [c for c in casos if c["id"] == args.caso]
+        if not casos:
+            sys.exit(f"caso '{args.caso}' nao existe em dados/cases.json")
+
+    if not usar_modelo:
+        print("=" * 72)
+        print("ATENCAO: modo --sem-modelo. NENHUMA chamada ao LLM sera feita.")
+        print("Os logs sairao carimbados com motor='heuristica_sem_modelo'.")
+        print("Para a entrega, rode sem esta flag, com a chave configurada.")
+        print("=" * 72)
+
+    execucoes = []
+    with CatalogoDB() as db:
+        for caso in casos:
+            resultado = executar_caso(caso, usar_modelo, db)
+            execucoes.append(resultado)
+            marca = resultado["decision"].get("title") or resultado["status"]
+            print(f"  {caso['id']:<34} -> {marca:<22} "
+                  f"({resultado['estado_final']['passos']} passos, "
+                  f"{resultado['estado_final']['chamadas_ferramenta']} ferramentas, "
+                  f"parada: {resultado['motivo_da_parada']})")
+
+    # Uma execucao parcial (--caso) nao sobrescreve o log da demonstracao completa,
+    # que e o arquivo que o verificador le e que vai para a entrega.
+    destino = LOG_PATH if not args.caso else LOG_PATH.parent / f"run_{args.caso}.json"
+    destino.parent.mkdir(exist_ok=True)
+    destino.write_text(json.dumps(execucoes, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"\n{len(execucoes)} execucao(oes) registrada(s) em {destino.relative_to(ROOT)}")
 
 
 if __name__ == "__main__":

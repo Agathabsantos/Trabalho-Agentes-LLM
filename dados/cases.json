@@ -1,46 +1,67 @@
 [
   {
-    "id": "simple_success",
+    "id": "caso_simples",
+    "descricao": "Caso simples: referencia existe, clima e claro, ha candidato na assinatura. Deve recomendar.",
     "user_id": "u-001",
     "subscriptions": ["Netflix"],
     "region": "BR",
-    "max_rating": "14+",
+    "max_rating": "16+",
+    "titulo_referencia": "Severance",
     "query": "Curti muito Severance. Me indica algo parecido.",
     "preferred_mood": "clima de mal-estar constante",
-    "expected_title": "Dark",
-    "expected_status": "recommendation"
+    "expected_status": "recommendation",
+    "expected_title": "Dark"
   },
   {
-    "id": "divergence_user_vs_system",
+    "id": "divergencia_usuario_vs_sistema",
+    "descricao": "Divergencia: o usuario cita Severance (intensa) mas pede algo leve. O pedido do usuario vence a referencia.",
     "user_id": "u-002",
     "subscriptions": ["Netflix", "Prime Video"],
     "region": "BR",
     "max_rating": "14+",
+    "titulo_referencia": "Severance",
     "query": "Quero algo leve e sem ficar pensando demais. Me lembra Severance?",
-    "preferred_mood": "leve e fácil",
-    "expected_title": "The Office",
-    "expected_status": "recommendation"
+    "preferred_mood": "leve e facil",
+    "expected_status": "recommendation",
+    "expected_title": "The Office"
   },
   {
-    "id": "missing_record",
+    "id": "registro_inexistente",
+    "descricao": "Registro inexistente: o titulo de referencia nao esta no catalogo. A ferramenta devolve erro e o agente tem de contornar sem inventar.",
     "user_id": "u-003",
     "subscriptions": ["Netflix"],
     "region": "BR",
-    "max_rating": "14+",
-    "query": "Gosto de filmes que parecem um questionario de filosofia, me indica algo parecido com um filme que nao existe.",
+    "max_rating": "16+",
+    "titulo_referencia": "O Enigma de Kessler",
+    "query": "Amei O Enigma de Kessler, me indica algo parecido.",
     "preferred_mood": "misterio filosofico",
-    "expected_title": null,
-    "expected_status": "no_match"
+    "expected_status": "no_match",
+    "expected_title": null
   },
   {
-    "id": "no_action",
+    "id": "nao_dispara_acao",
+    "descricao": "Nao deve disparar a acao principal: a unica plataforma assinada nao tem nada dentro da classificacao do perfil. Precisa parar, nao recomendar.",
     "user_id": "u-004",
     "subscriptions": ["Prime Video"],
     "region": "BR",
     "max_rating": "10+",
-    "query": "Estou com vontade de uma serie muito intensa e estranha, tipo Severance, mas sem pagar nada extra.",
-    "preferred_mood": "mal-estar e mistério",
-    "expected_title": "Servant",
-    "expected_status": "recommendation"
+    "titulo_referencia": "Severance",
+    "query": "Estou com vontade de uma serie intensa e estranha, tipo Severance, mas sem pagar nada extra.",
+    "preferred_mood": "mal-estar e misterio",
+    "expected_status": "no_match",
+    "expected_title": null
+  },
+  {
+    "id": "nao_repete_recomendacao",
+    "descricao": "Nao repetir: o melhor candidato ja foi recomendado antes para esse usuario. Precisa oferecer o proximo, nao repetir.",
+    "user_id": "u-005",
+    "subscriptions": ["Netflix"],
+    "region": "BR",
+    "max_rating": "16+",
+    "titulo_referencia": null,
+    "query": "Quero uma serie de misterio para maratonar hoje a noite.",
+    "preferred_mood": "misterio e estranheza",
+    "expected_status": "recommendation",
+    "expected_title": "The OA"
   }
 ]

@@ -1,289 +1,560 @@
 [
   {
-    "case_id": "simple_success",
+    "case_id": "caso_simples",
+    "descricao": "Caso simples: referencia existe, clima e claro, ha candidato na assinatura. Deve recomendar.",
     "query": "Curti muito Severance. Me indica algo parecido.",
-    "budget": {
-      "max_steps": 4,
-      "max_tool_calls": 4,
-      "token_budget": 1200
+    "motor": "modelo",
+    "modelo": "ministral-8b-2512",
+    "orcamento": {
+      "max_passos": 8,
+      "max_chamadas_ferramenta": 10,
+      "max_tokens": 12000
     },
-    "trajectory": [
+    "estado_final": {
+      "caso_id": "caso_simples",
+      "user_id": "u-001",
+      "titulo_referencia": "Severance",
+      "clima_inferido": "mal_estar constante",
+      "candidatos_vistos": [
+        "Dark"
+      ],
+      "titulos_recusados_pela_escrita": [],
+      "passos": 4,
+      "chamadas_ferramenta": 3,
+      "tokens": 7251,
+      "erros_de_ferramenta": 0,
+      "motivo_da_parada": "resposta_final"
+    },
+    "motivo_da_parada": "resposta_final",
+    "trajetoria": [
       {
-        "tool": "catalog_search",
+        "passo": 1,
+        "ferramenta": "consultar_titulo",
         "args": {
-          "query": "Curti muito Severance. Me indica algo parecido.",
-          "subscriptions": [
-            "Netflix"
+          "nome": "Severance"
+        },
+        "resultado": {
+          "titulo": "Severance",
+          "clima": [
+            "mal_estar",
+            "misterio",
+            "ambiente_corporativo"
+          ],
+          "generos": [
+            "suspense",
+            "ficcao_cientifica",
+            "drama"
+          ],
+          "classificacao": "16+",
+          "plataformas": [
+            "Apple TV+",
+            "Prime Video"
+          ],
+          "sinopse": "Funcionarios em uma empresa descobrem que suas memorias foram fragmentadas, criando uma atmosfera de estranhamento constante.",
+          "avaliacoes": [
+            "A sensacao de mal estar e constante",
+            "o clima inquietante e melhor que a trama"
           ]
         },
-        "result": [
-          "The OA",
-          "The Queen's Gambit",
-          "The Office"
-        ]
+        "erro": null,
+        "ms": 1203
       },
       {
-        "tool": "check_availability",
+        "passo": 2,
+        "ferramenta": "buscar_candidatos",
         "args": {
-          "candidates": [
-            "The OA",
-            "The Queen's Gambit",
-            "The Office"
+          "clima": "mal_estar constante",
+          "limite": 5
+        },
+        "resultado": {
+          "candidatos": [
+            {
+              "titulo": "Dark",
+              "clima": [
+                "mal_estar",
+                "misterio",
+                "tempo"
+              ],
+              "classificacao": "16+",
+              "plataforma": "Netflix",
+              "sinopse": "Uma pequena cidade enfrenta uma serie de eventos estranhos ligados a uma ligacao temporal quase impossivel.",
+              "avaliacoes": [
+                "o clima de inquietacao e o que chama atencao",
+                "sentimento de que algo esta errado o tempo todo"
+              ],
+              "pontuacao_clima": 1
+            }
+          ],
+          "excluidos_por_historico": [
+            "The OA"
           ]
         },
-        "result": [
-          {
-            "title": "The OA",
-            "platform": "Netflix",
-            "reason": "Uma mulher retorna depois de anos desaparecida com um conto de experiencias estranhas e filosoficas."
-          },
-          {
-            "title": "The Queen's Gambit",
-            "platform": "Netflix",
-            "reason": "Uma prodigio do xadrez tenta se afirmar em um mundo dominado por homens e pela pressao emocional."
-          },
-          {
-            "title": "The Office",
-            "platform": "Netflix",
-            "reason": "Um ambiente de trabalho com humor absurdamente cotidiano e personagens memoraveis."
-          }
-        ]
+        "erro": null,
+        "ms": 600
       },
       {
-        "tool": "model_response",
-        "args": {
-          "title": "The OA"
-        },
-        "result": {
-          "status": "recommendation",
-          "title": "The OA",
-          "reason": "Combina com a ambiência descrita pelo usuário e está na assinatura disponível.",
-          "platform": "Netflix",
-          "confidence": "medium",
-          "missing_info": "Nenhuma informação pendente na base simulada com dados do caso.",
-          "next_step": "Aguardar confirmação do usuário antes de registrar a ação final."
-        }
-      },
-      {
-        "tool": "record_decision",
+        "passo": 3,
+        "ferramenta": "registrar_recomendacao",
         "args": {
           "user_id": "u-001",
-          "title": "The OA"
+          "titulo": "Dark",
+          "motivo": "Assim como Severance, Dark cria um clima de mal-estar constante e misterio, com uma narrativa que mantém o espectador em estado de inquietação, embora com um enfoque em eventos sobrenaturais e temporais em uma pequena cidade."
         },
-        "result": {
-          "written": true,
-          "entry": {
-            "user_id": "u-001",
-            "title": "The OA",
-            "status": "recommendation"
-          }
-        }
+        "resultado": {
+          "gravado": true,
+          "id": 4,
+          "titulo": "Dark",
+          "plataforma": "Netflix",
+          "motivo_registrado": "Assim como Severance, Dark cria um clima de mal-estar constante e misterio, com uma narrativa que mantém o espectador em estado de inquietação, embora com um enfoque em eventos sobrenaturais e temporais em uma pequena cidade.",
+          "reversivel": true
+        },
+        "erro": null,
+        "ms": 1168
+      },
+      {
+        "passo": 4,
+        "ferramenta": null,
+        "args": null,
+        "resultado": {
+          "status": "recommendation",
+          "title": "Dark",
+          "reason": "O clima de mal-estar constante e misterio é semelhante ao de Severance, com uma narrativa que gera inquietação contínua, como destacado nas avaliações: 'o clima de inquietacao e o que chama atencao' e 'sentimento de que algo esta errado o tempo todo'.",
+          "platform": "Netflix",
+          "confidence": "high",
+          "missing_info": "nenhuma",
+          "next_step": "nenhuma"
+        },
+        "erro": null,
+        "ms": 1836
       }
     ],
     "decision": {
       "status": "recommendation",
-      "title": "The OA",
-      "reason": "Combina com a ambiência descrita pelo usuário e está na assinatura disponível.",
+      "title": "Dark",
+      "reason": "O clima de mal-estar constante e misterio é semelhante ao de Severance, com uma narrativa que gera inquietação contínua, como destacado nas avaliações: 'o clima de inquietacao e o que chama atencao' e 'sentimento de que algo esta errado o tempo todo'.",
       "platform": "Netflix",
-      "confidence": "medium",
-      "missing_info": "Nenhuma informação pendente na base simulada com dados do caso.",
-      "next_step": "Aguardar confirmação do usuário antes de registrar a ação final."
+      "confidence": "high",
+      "missing_info": "nenhuma",
+      "next_step": "nenhuma"
     },
     "status": "recommendation"
   },
   {
-    "case_id": "divergence_user_vs_system",
+    "case_id": "divergencia_usuario_vs_sistema",
+    "descricao": "Divergencia: o usuario cita Severance (intensa) mas pede algo leve. O pedido do usuario vence a referencia.",
     "query": "Quero algo leve e sem ficar pensando demais. Me lembra Severance?",
-    "budget": {
-      "max_steps": 4,
-      "max_tool_calls": 4,
-      "token_budget": 1200
+    "motor": "modelo",
+    "modelo": "ministral-8b-2512",
+    "orcamento": {
+      "max_passos": 8,
+      "max_chamadas_ferramenta": 10,
+      "max_tokens": 12000
     },
-    "trajectory": [
+    "estado_final": {
+      "caso_id": "divergencia_usuario_vs_sistema",
+      "user_id": "u-002",
+      "titulo_referencia": "Severance",
+      "clima_inferido": "leve e facil",
+      "candidatos_vistos": [
+        "The Office"
+      ],
+      "titulos_recusados_pela_escrita": [],
+      "passos": 4,
+      "chamadas_ferramenta": 3,
+      "tokens": 7328,
+      "erros_de_ferramenta": 0,
+      "motivo_da_parada": "resposta_final"
+    },
+    "motivo_da_parada": "resposta_final",
+    "trajetoria": [
       {
-        "tool": "catalog_search",
+        "passo": 1,
+        "ferramenta": "consultar_titulo",
         "args": {
-          "query": "Quero algo leve e sem ficar pensando demais. Me lembra Severance?",
-          "subscriptions": [
-            "Netflix",
+          "nome": "Severance"
+        },
+        "resultado": {
+          "titulo": "Severance",
+          "clima": [
+            "mal_estar",
+            "misterio",
+            "ambiente_corporativo"
+          ],
+          "generos": [
+            "suspense",
+            "ficcao_cientifica",
+            "drama"
+          ],
+          "classificacao": "16+",
+          "plataformas": [
+            "Apple TV+",
             "Prime Video"
+          ],
+          "sinopse": "Funcionarios em uma empresa descobrem que suas memorias foram fragmentadas, criando uma atmosfera de estranhamento constante.",
+          "avaliacoes": [
+            "A sensacao de mal estar e constante",
+            "o clima inquietante e melhor que a trama"
           ]
         },
-        "result": [
-          "The Office",
-          "The OA",
-          "The Queen's Gambit"
-        ]
+        "erro": null,
+        "ms": 514
       },
       {
-        "tool": "check_availability",
+        "passo": 2,
+        "ferramenta": "buscar_candidatos",
         "args": {
-          "candidates": [
-            "The Office",
-            "The OA",
-            "The Queen's Gambit"
+          "clima": "leve e facil",
+          "limite": 5
+        },
+        "resultado": {
+          "candidatos": [
+            {
+              "titulo": "The Office",
+              "clima": [
+                "leve",
+                "sarcastico",
+                "cotidiano"
+              ],
+              "classificacao": "14+",
+              "plataforma": "Netflix",
+              "sinopse": "Um ambiente de trabalho com humor absurdamente cotidiano e personagens memoraveis.",
+              "avaliacoes": [
+                "bem leve e engraçada",
+                "o humor e mais cotidiano do que intenso"
+              ],
+              "pontuacao_clima": 1
+            }
+          ],
+          "excluidos_por_historico": [
+            "Only Murders in the Building"
           ]
         },
-        "result": [
-          {
-            "title": "The Office",
-            "platform": "Netflix",
-            "reason": "Um ambiente de trabalho com humor absurdamente cotidiano e personagens memoraveis."
-          },
-          {
-            "title": "The OA",
-            "platform": "Netflix",
-            "reason": "Uma mulher retorna depois de anos desaparecida com um conto de experiencias estranhas e filosoficas."
-          },
-          {
-            "title": "The Queen's Gambit",
-            "platform": "Netflix",
-            "reason": "Uma prodigio do xadrez tenta se afirmar em um mundo dominado por homens e pela pressao emocional."
-          }
-        ]
+        "erro": null,
+        "ms": 562
       },
       {
-        "tool": "model_response",
-        "args": {
-          "title": "The Office"
-        },
-        "result": {
-          "status": "recommendation",
-          "title": "The Office",
-          "reason": "A recomendação combina com a intenção de leveza e descontração, mesmo que a referência em Severance seja mais intensa.",
-          "platform": "Netflix",
-          "confidence": "medium",
-          "missing_info": "Nenhuma informação pendente na base simulada com dados do caso.",
-          "next_step": "Aguardar confirmação do usuário antes de registrar a ação final."
-        }
-      },
-      {
-        "tool": "record_decision",
+        "passo": 3,
+        "ferramenta": "registrar_recomendacao",
         "args": {
           "user_id": "u-002",
-          "title": "The Office"
+          "titulo": "The Office",
+          "motivo": "O clima do The Office é leve e focado em situações cotidianas, sem exigir reflexão profunda ou tensão narrativa, o que atende ao pedido de algo fácil e descontraído. Além disso, é uma série com humor sarcástico e ambientada em um escritório, que contrasta com o clima misterioso e corporativo de Severance."
         },
-        "result": {
-          "written": true,
-          "entry": {
-            "user_id": "u-002",
-            "title": "The Office",
-            "status": "recommendation"
-          }
-        }
+        "resultado": {
+          "gravado": true,
+          "id": 5,
+          "titulo": "The Office",
+          "plataforma": "Netflix",
+          "motivo_registrado": "O clima do The Office é leve e focado em situações cotidianas, sem exigir reflexão profunda ou tensão narrativa, o que atende ao pedido de algo fácil e descontraído. Além disso, é uma série com humor sarcástico e ambientada em um escritório, que contrasta com o clima misterioso e corporativo de Severance.",
+          "reversivel": true
+        },
+        "erro": null,
+        "ms": 1315
+      },
+      {
+        "passo": 4,
+        "ferramenta": null,
+        "args": null,
+        "resultado": {
+          "status": "recommendation",
+          "title": "The Office",
+          "reason": "A série tem clima leve, focado em humor cotidiano e situações descontraídas, sem exigir reflexão profunda ou tensão narrativa, como solicitado. Além disso, é uma comédia ambientada em um escritório, contrastando com o clima misterioso e corporativo de *Severance*.",
+          "platform": "Netflix",
+          "confidence": "high",
+          "missing_info": "nenhuma",
+          "next_step": "nenhuma"
+        },
+        "erro": null,
+        "ms": 1919
       }
     ],
     "decision": {
       "status": "recommendation",
       "title": "The Office",
-      "reason": "A recomendação combina com a intenção de leveza e descontração, mesmo que a referência em Severance seja mais intensa.",
+      "reason": "A série tem clima leve, focado em humor cotidiano e situações descontraídas, sem exigir reflexão profunda ou tensão narrativa, como solicitado. Além disso, é uma comédia ambientada em um escritório, contrastando com o clima misterioso e corporativo de *Severance*.",
       "platform": "Netflix",
-      "confidence": "medium",
-      "missing_info": "Nenhuma informação pendente na base simulada com dados do caso.",
-      "next_step": "Aguardar confirmação do usuário antes de registrar a ação final."
+      "confidence": "high",
+      "missing_info": "nenhuma",
+      "next_step": "nenhuma"
     },
     "status": "recommendation"
   },
   {
-    "case_id": "missing_record",
-    "query": "Gosto de filmes que parecem um questionario de filosofia, me indica algo parecido com um filme que nao existe.",
-    "budget": {
-      "max_steps": 4,
-      "max_tool_calls": 4,
-      "token_budget": 1200
+    "case_id": "registro_inexistente",
+    "descricao": "Registro inexistente: o titulo de referencia nao esta no catalogo. A ferramenta devolve erro e o agente tem de contornar sem inventar.",
+    "query": "Amei O Enigma de Kessler, me indica algo parecido.",
+    "motor": "modelo",
+    "modelo": "ministral-8b-2512",
+    "orcamento": {
+      "max_passos": 8,
+      "max_chamadas_ferramenta": 10,
+      "max_tokens": 12000
     },
-    "trajectory": [
+    "estado_final": {
+      "caso_id": "registro_inexistente",
+      "user_id": "u-003",
+      "titulo_referencia": "O Enigma de Kessler",
+      "clima_inferido": null,
+      "candidatos_vistos": [],
+      "titulos_recusados_pela_escrita": [],
+      "passos": 2,
+      "chamadas_ferramenta": 1,
+      "tokens": 3258,
+      "erros_de_ferramenta": 1,
+      "motivo_da_parada": "resposta_final"
+    },
+    "motivo_da_parada": "resposta_final",
+    "trajetoria": [
       {
-        "tool": "catalog_search",
+        "passo": 1,
+        "ferramenta": "consultar_titulo",
         "args": {
-          "query": "Gosto de filmes que parecem um questionario de filosofia, me indica algo parecido com um filme que nao existe.",
-          "subscriptions": [
-            "Netflix"
-          ]
+          "nome": "O Enigma de Kessler"
         },
-        "result": [
-          "The OA",
-          "The Queen's Gambit",
-          "The Office"
-        ]
+        "resultado": {
+          "erro": "registro_inexistente",
+          "detalhe": "'O Enigma de Kessler' nao existe no catalogo",
+          "como_corrigir": "NAO invente um titulo parecido. Se o titulo de referencia nao existe, encerre com status no_match e peca ao usuario que confirme o nome."
+        },
+        "erro": "registro_inexistente",
+        "ms": 609
       },
       {
-        "tool": "check_availability",
-        "args": {
-          "candidates": [
-            "The OA",
-            "The Queen's Gambit",
-            "The Office"
-          ]
+        "passo": 2,
+        "ferramenta": null,
+        "args": null,
+        "resultado": {
+          "status": "no_match",
+          "title": null,
+          "reason": "O titulo 'O Enigma de Kessler' nao foi encontrado no catalogo. Por favor, confirme o nome exato do filme ou serie que mencionou.",
+          "platform": null,
+          "confidence": "high",
+          "missing_info": "Nome correto do titulo de referencia",
+          "next_step": "perguntar ao usuario pelo nome exato do titulo citado"
         },
-        "result": [
-          {
-            "title": "The OA",
-            "platform": "Netflix",
-            "reason": "Uma mulher retorna depois de anos desaparecida com um conto de experiencias estranhas e filosoficas."
-          },
-          {
-            "title": "The Queen's Gambit",
-            "platform": "Netflix",
-            "reason": "Uma prodigio do xadrez tenta se afirmar em um mundo dominado por homens e pela pressao emocional."
-          },
-          {
-            "title": "The Office",
-            "platform": "Netflix",
-            "reason": "Um ambiente de trabalho com humor absurdamente cotidiano e personagens memoraveis."
-          }
-        ]
-      },
-      {
-        "tool": "termination",
-        "args": {
-          "reason": "expected no_match from domain case"
-        },
-        "result": "stop"
+        "erro": null,
+        "ms": 1280
       }
     ],
     "decision": {
       "status": "no_match",
       "title": null,
-      "reason": "Não há registro válido compatível com o caso solicitado.",
+      "reason": "O titulo 'O Enigma de Kessler' nao foi encontrado no catalogo. Por favor, confirme o nome exato do filme ou serie que mencionou.",
       "platform": null,
-      "confidence": "low",
-      "missing_info": "O identificador ou o título pedido não existe no catálogo do domínio.",
-      "next_step": "Pedir refinamento ou esclarecer o pedido antes de tentar outra recomendação."
+      "confidence": "high",
+      "missing_info": "Nome correto do titulo de referencia",
+      "next_step": "perguntar ao usuario pelo nome exato do titulo citado"
     },
     "status": "no_match"
   },
   {
-    "case_id": "no_action",
-    "query": "Estou com vontade de uma serie muito intensa e estranha, tipo Severance, mas sem pagar nada extra.",
-    "budget": {
-      "max_steps": 4,
-      "max_tool_calls": 4,
-      "token_budget": 1200
+    "case_id": "nao_dispara_acao",
+    "descricao": "Nao deve disparar a acao principal: a unica plataforma assinada nao tem nada dentro da classificacao do perfil. Precisa parar, nao recomendar.",
+    "query": "Estou com vontade de uma serie intensa e estranha, tipo Severance, mas sem pagar nada extra.",
+    "motor": "modelo",
+    "modelo": "ministral-8b-2512",
+    "orcamento": {
+      "max_passos": 8,
+      "max_chamadas_ferramenta": 10,
+      "max_tokens": 12000
     },
-    "trajectory": [
+    "estado_final": {
+      "caso_id": "nao_dispara_acao",
+      "user_id": "u-004",
+      "titulo_referencia": "Severance",
+      "clima_inferido": null,
+      "candidatos_vistos": [],
+      "titulos_recusados_pela_escrita": [],
+      "passos": 3,
+      "chamadas_ferramenta": 2,
+      "tokens": 5147,
+      "erros_de_ferramenta": 0,
+      "motivo_da_parada": "resposta_final"
+    },
+    "motivo_da_parada": "resposta_final",
+    "trajetoria": [
       {
-        "tool": "catalog_search",
+        "passo": 1,
+        "ferramenta": "consultar_titulo",
         "args": {
-          "query": "Estou com vontade de uma serie muito intensa e estranha, tipo Severance, mas sem pagar nada extra.",
-          "subscriptions": [
+          "nome": "Severance"
+        },
+        "resultado": {
+          "titulo": "Severance",
+          "clima": [
+            "mal_estar",
+            "misterio",
+            "ambiente_corporativo"
+          ],
+          "generos": [
+            "suspense",
+            "ficcao_cientifica",
+            "drama"
+          ],
+          "classificacao": "16+",
+          "plataformas": [
+            "Apple TV+",
             "Prime Video"
+          ],
+          "sinopse": "Funcionarios em uma empresa descobrem que suas memorias foram fragmentadas, criando uma atmosfera de estranhamento constante.",
+          "avaliacoes": [
+            "A sensacao de mal estar e constante",
+            "o clima inquietante e melhor que a trama"
           ]
         },
-        "result": []
+        "erro": null,
+        "ms": 1018
       },
       {
-        "tool": "termination",
+        "passo": 2,
+        "ferramenta": "buscar_candidatos",
         "args": {
-          "reason": "no candidate in subscribed catalog"
+          "clima": "mal-estar e misterio",
+          "limite": 5
         },
-        "result": "stop"
+        "resultado": {
+          "candidatos": [],
+          "aviso": "nenhum titulo do catalogo atende assinatura, classificacao e clima ao mesmo tempo",
+          "excluidos_por_historico": [],
+          "como_corrigir": "NAO relaxe os filtros por conta propria e NAO sugira algo fora da assinatura. Encerre com status no_match."
+        },
+        "erro": null,
+        "ms": 997
+      },
+      {
+        "passo": 3,
+        "ferramenta": null,
+        "args": null,
+        "resultado": {
+          "status": "no_match",
+          "title": null,
+          "reason": "Nenhum título disponível na assinatura do usuário (Prime Video), com classificação adequada (10+) e que atenda ao clima de mal-estar e mistério solicitado.",
+          "platform": null,
+          "confidence": "high",
+          "missing_info": "nenhuma",
+          "next_step": "Verificar se o usuário deseja ajustar os critérios ou confirmar o nome do título de referência citado ('Severance')."
+        },
+        "erro": null,
+        "ms": 1575
       }
     ],
     "decision": {
       "status": "no_match",
-      "title": null
+      "title": null,
+      "reason": "Nenhum título disponível na assinatura do usuário (Prime Video), com classificação adequada (10+) e que atenda ao clima de mal-estar e mistério solicitado.",
+      "platform": null,
+      "confidence": "high",
+      "missing_info": "nenhuma",
+      "next_step": "Verificar se o usuário deseja ajustar os critérios ou confirmar o nome do título de referência citado ('Severance')."
     },
     "status": "no_match"
+  },
+  {
+    "case_id": "nao_repete_recomendacao",
+    "descricao": "Nao repetir: o melhor candidato ja foi recomendado antes para esse usuario. Precisa oferecer o proximo, nao repetir.",
+    "query": "Quero uma serie de misterio para maratonar hoje a noite.",
+    "motor": "modelo",
+    "modelo": "ministral-8b-2512",
+    "orcamento": {
+      "max_passos": 8,
+      "max_chamadas_ferramenta": 10,
+      "max_tokens": 12000
+    },
+    "estado_final": {
+      "caso_id": "nao_repete_recomendacao",
+      "user_id": "u-005",
+      "titulo_referencia": null,
+      "clima_inferido": "misterio e estranheza",
+      "candidatos_vistos": [
+        "The OA"
+      ],
+      "titulos_recusados_pela_escrita": [],
+      "passos": 3,
+      "chamadas_ferramenta": 2,
+      "tokens": 5357,
+      "erros_de_ferramenta": 0,
+      "motivo_da_parada": "resposta_final"
+    },
+    "motivo_da_parada": "resposta_final",
+    "trajetoria": [
+      {
+        "passo": 1,
+        "ferramenta": "buscar_candidatos",
+        "args": {
+          "clima": "misterio e estranheza",
+          "limite": 5
+        },
+        "resultado": {
+          "candidatos": [
+            {
+              "titulo": "The OA",
+              "clima": [
+                "misterio",
+                "surreal",
+                "ambiente_tenso"
+              ],
+              "classificacao": "14+",
+              "plataforma": "Netflix",
+              "sinopse": "Uma mulher retorna depois de anos desaparecida com um conto de experiencias estranhas e filosoficas.",
+              "avaliacoes": [
+                "a atmosfera estranha e cativante",
+                "o mistério e a sensação de desconforto se sobrepõem"
+              ],
+              "pontuacao_clima": 1
+            }
+          ],
+          "excluidos_por_historico": [
+            "Dark"
+          ]
+        },
+        "erro": null,
+        "ms": 808
+      },
+      {
+        "passo": 2,
+        "ferramenta": "registrar_recomendacao",
+        "args": {
+          "user_id": "u-005",
+          "titulo": "The OA",
+          "motivo": "A serie 'The OA' combina mistério e elementos surrealistas, criando uma atmosfera estranha e envolvente, perfeita para uma maratona noturna. A sinopse e as avaliações destacam a tensão e o desconforto intrigante, que atendem ao clima de mistério e estranheza solicitado."
+        },
+        "resultado": {
+          "gravado": true,
+          "id": 6,
+          "titulo": "The OA",
+          "plataforma": "Netflix",
+          "motivo_registrado": "A serie 'The OA' combina mistério e elementos surrealistas, criando uma atmosfera estranha e envolvente, perfeita para uma maratona noturna. A sinopse e as avaliações destacam a tensão e o desconforto intrigante, que atendem ao clima de mistério e estranheza solicitado.",
+          "reversivel": true
+        },
+        "erro": null,
+        "ms": 1655
+      },
+      {
+        "passo": 3,
+        "ferramenta": null,
+        "args": null,
+        "resultado": {
+          "status": "recommendation",
+          "title": "The OA",
+          "reason": "A série apresenta um mistério envolvente e elementos surrealistas, com avaliações destacando uma atmosfera estranha e tensa, ideal para maratona. A plataforma Netflix e a classificação 14+ atendem aos requisitos da conta.",
+          "platform": "Netflix",
+          "confidence": "high",
+          "missing_info": "nenhuma",
+          "next_step": "finalizar"
+        },
+        "erro": null,
+        "ms": 1266
+      }
+    ],
+    "decision": {
+      "status": "recommendation",
+      "title": "The OA",
+      "reason": "A série apresenta um mistério envolvente e elementos surrealistas, com avaliações destacando uma atmosfera estranha e tensa, ideal para maratona. A plataforma Netflix e a classificação 14+ atendem aos requisitos da conta.",
+      "platform": "Netflix",
+      "confidence": "high",
+      "missing_info": "nenhuma",
+      "next_step": "finalizar"
+    },
+    "status": "recommendation"
   }
 ]
