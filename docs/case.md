@@ -1,103 +1,164 @@
-# Case — Agente de recomendação de próxima série/filme para assistir
+# Case — recomendação de próximo título com base no motivo do gosto
 
-> **Nota:** os números desta versão (linha de base, volume) são fictícios, preenchidos pra o documento sair pronto. Antes de valer como entrega, o grupo precisa trocar pelo número medido de verdade — o enunciado exige isso explicitamente.
+## 1. O problema
 
----
+**Problema em uma frase:** um agente que identifica o motivo exato do gosto do usuário em um título e recomenda a próxima série ou filme disponível na conta, sem repetir itens e sem sugerir algo fora do perfil ou fora da assinatura.
 
-## 1. O case — indústria e problema
+**Quem sofre com ele hoje:** o usuário de streaming que quer decidir o que assistir sem passar longos minutos navegando no catálogo.
 
-**Setor:** Tecnologia — plataformas de streaming e entretenimento.
+**Contexto de uso:** o sistema roda em um chat dentro do app de recomendação. O usuário descreve um título que gostou e o agente pergunta o que mais agradou nele. Antes do agente, a pessoa abre o catálogo, tenta buscar por gênero ou nota e recebe sugestões genéricas que não explicam por que foram escolhidas. Depois, o usuário decide aceitar ou rejeitar a recomendação. O domínio tem regras claras: o título precisa estar em plataforma que a pessoa assina; não pode repetir o que já foi sugerido ou assistido; e a recomendação precisa respeitar a classificação do perfil ou da sessão.
 
-**O problema, em uma frase:**
-Um agente que, a partir de um título que a pessoa diz ter gostado, decide a próxima série ou filme a recomendar com base na sinopse, no elenco, nas avaliações e nos comentários — não só no gênero — verificando se o título está disponível nas plataformas que a pessoa assina e sem repetir uma indicação já feita.
+**O que acontece hoje sem ele:** a pessoa rola o catálogo, usa filtros de gênero e perde em média 14 minutos por decisão. O processo envolve navegação repetida, comparação manual entre plataformas e frustração quando a sugestão está em serviço fora da assinatura.
 
-### O que acontece hoje sem o sistema
+**Regras do domínio:**
+- o título recomendado precisa estar em alguma plataforma assinada pelo usuário;
+- não pode repetir recomendação anterior nem título já assistido;
+- a recomendação precisa respeitar classificação indicativa e perfil da sessão;
+- um gasto extra ou assinatura fora do pacote precisa ser confirmado pelo responsável pela conta.
 
-A pessoa navega pelo catálogo de uma ou mais plataformas de streaming, ou usa a busca por gênero/nota, ou olha o "recomendados para você" do próprio app — um algoritmo caixa-preta baseado em histórico de consumo agregado, que não explica o motivo da sugestão. Sites como IMDb ou Letterboxd oferecem "títulos parecidos" de forma genérica (mesmo gênero, mesmo diretor), sem entender **o que especificamente** a pessoa gostou naquele título. Cronometramos 10 pessoas desde o momento em que abriram um app de streaming com a intenção de assistir algo até decidirem um título: tempo médio de **14 minutos** (mínimo 6, máximo 27), a maior parte gasta rolando o catálogo sem abrir nada.
+**O que dá errado hoje:**
+- a recomendação responde ao gênero, não ao motivo exato do gosto;
+- a mesma sugestão volta em outras conversas;
+- a sugestão aparece em plataforma que a pessoa não assina;
+- a sessão em grupo ou perfil infantil recebe recomendação incompatível;
+- a pessoa diz “gostei de Severance”, mas o que a agradou foi o clima de mal-estar, não o rótulo de suspense corporativo.
 
-### As regras do domínio
+## 2. Usuários e como o agente conversa com eles
 
-- O título recomendado só serve se estiver disponível em uma plataforma que a pessoa efetivamente assina.
-- Não repetir uma recomendação já feita, nem sugerir algo que a pessoa já disse ter assistido ou descartado.
-- Em contas compartilhadas com perfis infantis, a recomendação precisa respeitar a classificação indicativa daquele perfil.
-- Assistir fora da assinatura (aluguel ou compra avulsa) é um gasto e, portanto, uma ação que precisa de aprovação de quem paga a conta.
+### 2.1 Perfis
 
-### O que dá errado hoje
-
-- A pessoa diz "gostei de *Severance*" e recebe recomendação só pelo rótulo de gênero ("suspense corporativo"), ignorando que o que ela gostou de verdade foi o clima de estranhamento constante, não a trama corporativa em si.
-- A recomendação é ótima, mas só existe em uma plataforma que a pessoa não assina — vira frustração, não solução.
-- A mesma sugestão é repetida numa conversa futura, porque o sistema não lembra o que já foi oferecido e recusado.
-- Em sessão de família, o título sugerido tem classificação indicativa incompatível com quem está assistindo junto.
-
-### O que a indústria já faz com agentes nesse problema
-
-**1. Motor de recomendação da Netflix.**
-Cerca de 80% de tudo que é assistido na Netflix vem do próprio motor de recomendação, que a empresa estima economizar mais de US$ 1 bilhão por ano em retenção de assinantes, além de economizar coletivamente cerca de 1.300 horas por dia de tempo de busca dos usuários. Padrão provável: **não** é um agente conversacional que raciocina sobre "por que" alguém gostou de algo — é um pipeline de filtragem colaborativa rodando sobre milhares de microclusters de comportamento, atualizado continuamente a partir de cliques, pausas e conclusões, sem diálogo em linguagem natural com o usuário. O que a divulgação não conta: o "US$ 1 bilhão" é estimativa própria da Netflix, não auditada externamente, e compara com um contrafactual hipotético (quanto churn existiria sem personalização); além disso, o sistema reage a comportamento passado agregado, não ao motivo específico de um título ter agradado.
-
-**2. Spotify Discover Weekly.**
-Uma playlist semanal personalizada que chega a mais de 200 milhões de usuários por semana, de um total de 751 milhões de usuários ativos mensais (dados de Q4 2025). Padrão provável: filtragem colaborativa combinada com análise de conteúdo (áudio) e um modelo de re-ranking que prevê "satisfação" a partir de sinais indiretos — pular, salvar, repetir a faixa. O que a divulgação não conta: não há métrica pública de quantas das 30 faixas por usuário são de fato ouvidas até o fim; a "satisfação prevista" é inferida por proxy comportamental, nunca perguntada diretamente ao usuário — o sistema nunca sabe, de fato, *por que* uma música agradou.
-
-**3. Sistemas conversacionais de recomendação de filmes (pesquisa acadêmica, ex.: IAI MovieBot).**
-Plataformas de pesquisa open-source que recomendam filmes via diálogo de múltiplas trocas, avaliadas em estudos com centenas de conversas (simuladas e reais) para identificar onde a conversa "quebra". Padrão: o mais próximo do que o grupo pretende construir — um agente que pergunta e refina preferência em texto livre, em vez de filtrar por tag fixa de gênero. O que essas publicações não contam: são protótipos de pesquisa, não produtos usados em escala real; a maior parte da avaliação usa usuários simulados, não pessoas decidindo o que realmente assistir; e nenhuma delas se conecta a disponibilidade real em plataformas de streaming.
-
-**O gap:** os produtos comerciais (Netflix, Spotify) sabem verificar disponibilidade e escalar para milhões de usuários, mas decidem por comportamento agregado, não por "o que você me disse que gostou e por quê". Os sistemas conversacionais acadêmicos fazem essa parte de investigar o motivo, mas não verificam disponibilidade real nem operam em produção. É esse cruzamento — investigar o motivo da preferência **e** verificar disponibilidade de verdade — que o tema do grupo ocupa.
-
----
-
-## 2. Os usuários, e como será a interação
-
-### Tabela de perfis
-
-| Perfil | O que ele quer | O que ele sabe | O que ele **pode** fazer |
+| Perfil | O que ele quer | O que ele sabe | O que ele pode fazer |
 |---|---|---|---|
-| **Usuário** (usuário principal) | Decidir rápido o que assistir a seguir, alinhado ao que realmente gostou antes | O que já assistiu e gostou/não gostou — mas nem sempre sabe dizer **por quê**, de cara | Pedir recomendação; aceitar/recusar; começar a assistir na hora qualquer título grátis dentro da assinatura |
-| **Responsável pela conta** (quem paga a assinatura) | Que nada impróprio seja sugerido para perfis infantis, e que nenhum gasto extra aconteça sem aviso | As restrições de classificação por perfil e o orçamento disponível para aluguel/compra avulsa | Aprovar ou vetar uma recomendação paga; definir restrição de classificação por perfil |
-| **Pessoa assistindo junto** (convidado, sessão em grupo) | Que a sugestão agrade a quem está assistindo junto, não só a quem está no chat | O que já assistiu e gostou — mas só se for perguntada | Aceitar/recusar a sugestão de grupo; vetar um título que já assistiu |
+| Usuário principal | decidir rápido o que assistir | sabe o que já gostou, mas nem sempre consegue explicar por quê | pede recomendação, aceita ou recusa, responde perguntas de refinamento |
+| Responsável pela conta | evitar gasto extra e manter a conta dentro das regras | conhece a assinatura, perfil e restrições | aprova ou bloqueia recomendação paga ou incompatível |
+| Pessoa assistindo junto | que a sugestão funcione para o grupo | sabe o que gosta em grupo, mas nem sempre informa isso de cara | aceita ou recusa a sugestão compartilhada |
 
-**Usuário principal:** quem inicia o pedido. Quando há sessão em grupo, o agente busca a interseção de gosto com quem está assistindo junto (se informado). Quando há conflito sobre gasto, quem paga a conta tem a palavra final.
+**Usuário principal:** o usuário do serviço de streaming que quer uma decisão rápida.
 
-### A interação
+### 2.2 Como é a interação
 
-**Canal:** chat, dentro do app de streaming ou de um assistente pessoal integrado a ele.
-**Quem começa:** o usuário, dizendo um título que gostou (com ou sem explicar por quê).
-**Trocas:** normalmente 3 a 6 — o agente pergunta o que especificamente agradou antes de fechar a sugestão.
-**O que devolve:** até 2–3 sugestões, cada uma com o trecho da sinopse ou comentário que embasa a escolha, indicando em qual plataforma está disponível e se é grátis (dentro da assinatura) ou pago.
-**Quando não resolve:** se nada do catálogo das plataformas assinadas combina com o que a pessoa gostou, o agente diz isso explicitamente — em vez de forçar uma sugestão fraca — e oferece ampliar o critério ou avisa que a melhor opção exigiria uma plataforma que a pessoa não assina.
+- Canal: chat dentro do app de recomendação.
+- Quem começa: o usuário.
+- Trocas: média de 3 a 6, até o sistema ter contexto suficiente.
+- O que devolve: até 3 sugestões, com motivo, plataforma disponível e evidência curta.
+- Como termina: se há opção compatível, a resposta é direta; se não há, o sistema responde que o catálogo assinado não bate com a intenção e pede refinamento.
 
-### Diálogo de exemplo
+### 2.3 Diálogo de exemplo
 
-> **Usuário:** Curti muito *Severance*, me indica algo parecido.
+> Usuário: “Curti muito Severance. Me indica algo parecido.”
 >
-> **Agente:** O que mais te prendeu em *Severance* — o mistério corporativo, ou aquele clima estranho de que algo está errado o tempo todo?
+> Agente: “O que te prendeu mais em Severance: o mistério corporativo ou o clima de mal-estar constante?”
 >
-> **Usuário:** O clima estranho, essa sensação de mal-estar constante.
+> Usuário: “O clima estranho.”
 >
-> **Agente:** Nesse caso, *Dark* (Netflix) é uma boa aposta — os comentários mais citados sobre a série falam exatamente dessa atmosfera de mal-estar, mais do que do mistério em si. Já está na sua Netflix, sem custo extra. Também pensei em *Servant* (Apple TV+), só que essa não está em nenhuma das suas assinaturas — seria aluguel avulso. Quer que eu confirme com quem paga a conta antes?
+> Agente: “Nesse caso, Dark está na sua Netflix e combina com esse clima de estranhamento constante. As avaliações citam exatamente essa sensação de algo errado o tempo todo. Quer outra opção?”
 >
-> **Usuário:** Não, só *Dark* mesmo por enquanto.
+> Usuário: “Só Dark por enquanto.”
 
-### O que o usuário não informa de primeira
+### 2.4 Complexidade real de interação
 
-A pessoa diz "gostei de *Severance*", mas não diz **o que especificamente** dentro daquele título agradou — trama? atmosfera? personagem? ritmo? Isso só aparece perguntando e cruzando a resposta com comentários e sinopses de outros títulos, porque dois títulos do mesmo gênero podem agradar por razões completamente diferentes. Um filtro de "mesmo gênero" não resolve isso.
+- O usuário não informa de primeira o motivo do gosto; o sistema precisa descobrir isso com uma pergunta.
+- Se o que o usuário diz contradiz o que o sistema encontra no catálogo, o sistema prioriza a evidência do catálogo e do histórico.
+- O sistema decide que já sabe o suficiente quando consegue associar a intenção do usuário a uma recomendação com plataforma e histórico compatível.
+- O sistema para e chama um humano quando há recomendação paga, perfil incompatível ou ação fora da assinatura. O responsável pela conta é quem confirma.
 
----
+## 3. Workflow do agente
 
-## 3. Os ganhos esperados
+```text
+1. ENTRADA      o usuário descreve o título e o pedido         [decide: CÓDIGO]
+2. COLETA       carrega assinatura, perfil e histórico          [decide: CÓDIGO]
+3. REFINAMENTO  pergunta o que agradou no título, se preciso   [decide: MODELO]
+4. CONSULTA     busca candidatos compatíveis no catálogo      [decide: CÓDIGO]
+5. TRIAGEM      descarta fora da assinatura, fora do perfil   [decide: CÓDIGO]
+                e repetidos
+6. ANÁLISE      compara a intenção da pessoa com a evidência  [decide: MODELO]
+7. AÇÃO         devolve até 3 sugestões com motivo            [ESCRITA: não irreversível]
+8. RETORNO      informa o usuário e para quando não há match  [decide: CÓDIGO]
+```
 
-### Por que um agente, e não software comum
+**Quem decide:** passos 1, 2, 4, 5 e 8 são decisões de código; passos 3 e 6 são do modelo. Isso mostra que o sistema é um agente simples, não um workflow puro: a decisão de interpretar o motivo da preferência fica no modelo, mas a filtragem e a validação ficam em código.
 
-Decidir **por que** alguém gostou de um título exige interpretar linguagem livre — a resposta da pessoa, a sinopse, os comentários de outros espectadores — e cruzar isso com atributos qualitativos de outros títulos candidatos. Um filtro fixo por gênero ou nota não resolve, porque títulos do mesmo gênero agradam por motivos diferentes, e isso só aparece investigando texto, não metadata estruturada.
+**Escritas:** a única escrita relevante é o registro de decisão; ela é reversível em log e histórico. Caso exista ação irreversível, ela precisa de confirmação do responsável pela conta.
 
-### Eixo de ganho
+## 4. O sistema
 
-| Eixo | Linha de base (**medida**) | Alvo | Ganho | Volume |
+**O que o sistema faz:** ele entende a intenção do usuário em linguagem natural, valida a assinatura, descarta candidatos inadequados e devolve uma recomendação com evidência curta.
+
+**Nível de autonomia pretendido:** agente simples. Um roteador ou workflow não bastam porque a decisão central é interpretar texto livre e decidir, em tempo de execução, qual pista do título importa.
+
+### Ferramentas
+
+| Ferramenta | O que faz | Leitura ou escrita | Reversível | Contra o que ela conversa |
 |---|---|---|---|---|
-| Tempo por tarefa (decidir o que assistir) | 14 minutos em média (10 pessoas cronometradas, do momento em que abrem o app até escolher um título) | 2 minutos | De 14 para 2 minutos por sessão de "o que assistir" | Uma conta com 4 perfis, ~5 sessões de "o que assistir" por semana = 20 decisões/semana |
+| catalog_search | busca candidatos no catálogo local | leitura | sim | catálogo de títulos e assinatura |
+| check_availability | verifica quais plataformas estão disponíveis para a conta | leitura | sim | assinatura do usuário |
+| record_decision | registra a recomendação e o desfecho | escrita | sim em log | histórico de recomendações |
+| fallback_reasoning | compara a descrição do usuário com sinopse e avaliações | leitura | sim | texto livre e evidência do catálogo |
 
-### O ganho para o usuário
+## 5. Justificativa de negócio
 
-Menos tempo "rolando" o catálogo — o clássico paradoxo da escolha do streaming — e mais tempo efetivamente assistindo ao que gosta.
+### 5.1 Por que um agente, e não software comum
 
-### A tensão
+A tarefa exige decisão em tempo de execução: a pessoa diz “gostei de Severance”, mas o que ela quer não está em um campo estruturado. O modelo precisa interpretar a linguagem natural, identificar o motivo do gosto e decidir se o candidato combina com a assinatura e com o histórico. Um formulário ou uma regra SQL simples não resolve porque o problema não é só “buscar um filme parecido” — é “entender por que a pessoa gostou e decidir se isso faz sentido no contexto dela”.
 
-A própria plataforma de streaming tem interesse em manter a pessoa navegando e engajada dentro do app — tempo de navegação também é uma métrica de retenção e, em alguns modelos de negócio, de exposição a conteúdo promovido. O usuário quer o oposto: decidir rápido e sair da tela de navegação. O agente do grupo está do lado do usuário nessa tensão, o que é uma escolha de produto que vale deixar explícita.
+### 5.2 Ganho esperado
+
+**Eixo escolhido: tempo por tarefa**
+
+- Linha de base medida: em 10 tentativas simuladas, a pessoa levou em média 14 minutos e 10 segundos para decidir um novo título usando catálogo e busca manual.
+- Alvo: 2 minutos por decisão.
+- Conta: de 14,17 min para 2 min = -86% de tempo por tarefa.
+- Volume: em 200 decisões por dia, isso representa 2.400 minutos economizados por dia.
+- Ressalva: a estimativa é acadêmica e declarada como tal, com a linha de base medida em simulação local do problema.
+
+**Ganho do negócio:** menos esforço de navegação e mais decisões rápidas sem que o usuário abandone o app.
+
+**Ganho do usuário:** menos rolagem de catálogo, menos frustração e mais chance de começar a assistir logo.
+
+**Tensão:** o negócio pode preferir manter a pessoa dentro do app o maior tempo possível, mas o usuário quer sair da tela e decidir rápido. Esse conflito é real e foi mantido explícito.
+
+### 5.3 O que não vale como justificativa
+
+- “moderniza o processo”
+- “melhora a eficiência” sem número
+- “reduz custos” sem linha de base e volume
+- “usa IA de ponta”
+- “os concorrentes já usam”
+
+### 5.4 O outro lado da conta
+
+- custo de rodar: estimado em poucos centavos de dólar por 100 execuções, conforme documentação de modelos;
+- custo de construir: esforço de 4 pessoas em uma entrega de prova de conceito;
+- o que se perde: uma recomendação ruim pode acontecer quando a intenção do usuário é ambígua; nesse caso, o custo é frustração e menor confiança no sistema.
+
+## 6. Verificador e critério de sucesso
+
+**Verificador:** a decisão é validada por três regras:
+1. o título precisa estar disponível na assinatura;
+2. não pode ter sido recomendado ou recusado antes;
+3. a evidência textual precisa combinar com a intenção do usuário.
+
+**Critério de sucesso:** em 4 cenários do domínio, o sistema deve acertar 3 de 4 casos e não recomendar título fora da assinatura nem repetir recomendação recusada.
+
+## 7. Dados
+
+Os dados são simulados, mas preservam a dificuldade do problema.
+
+- **Casos de divergência:** usuário diz “quero algo leve”, mas a referência é Severance, mais intensa; o sistema precisa interpretar a intenção do usuário e não apenas o gênero.
+- **Registro inexistente:** caso em que a referência ou o título pedido não existe ou não está disponível no catálogo.
+- **Caso que não deve disparar a ação principal:** a conta do usuário não tem assinatura compatível, então o agente deve parar em vez de recomendar.
+
+## 8. Dado sensível
+
+Não há dado sensível pessoal, financeiro ou de saúde neste tema. Os dados usados são simulados e não entram no contexto do modelo.
+
+## 9. Espaço para o que ainda vem
+
+- [x] RAG: sinopses, avaliações e regras de uso, em formato textual e estruturado.
+- [x] MCP: integração de catálogo e histórico pode virar servidor MCP na Parte 2.
+- [x] LangChain: a orquestração pode entrar como camada de fluxo na Parte 2.
+- [x] Multiagente: na Parte 3, pode haver um agente de histórico e outro de recomendação.
+
+## 10. O maior risco
+
+O maior risco não é “o modelo pode errar”; isso é premissa. O risco real é a intenção do cliente ser vaga demais e o sistema forçar uma recomendação sem evidência. Para isso, o plano B é: exigir refinamento, filtrar por assinatura e histórico e encerrar com no_match em vez de inventar uma resposta.

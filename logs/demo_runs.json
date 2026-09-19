@@ -1,0 +1,289 @@
+[
+  {
+    "case_id": "simple_success",
+    "query": "Curti muito Severance. Me indica algo parecido.",
+    "budget": {
+      "max_steps": 4,
+      "max_tool_calls": 4,
+      "token_budget": 1200
+    },
+    "trajectory": [
+      {
+        "tool": "catalog_search",
+        "args": {
+          "query": "Curti muito Severance. Me indica algo parecido.",
+          "subscriptions": [
+            "Netflix"
+          ]
+        },
+        "result": [
+          "The OA",
+          "The Queen's Gambit",
+          "The Office"
+        ]
+      },
+      {
+        "tool": "check_availability",
+        "args": {
+          "candidates": [
+            "The OA",
+            "The Queen's Gambit",
+            "The Office"
+          ]
+        },
+        "result": [
+          {
+            "title": "The OA",
+            "platform": "Netflix",
+            "reason": "Uma mulher retorna depois de anos desaparecida com um conto de experiencias estranhas e filosoficas."
+          },
+          {
+            "title": "The Queen's Gambit",
+            "platform": "Netflix",
+            "reason": "Uma prodigio do xadrez tenta se afirmar em um mundo dominado por homens e pela pressao emocional."
+          },
+          {
+            "title": "The Office",
+            "platform": "Netflix",
+            "reason": "Um ambiente de trabalho com humor absurdamente cotidiano e personagens memoraveis."
+          }
+        ]
+      },
+      {
+        "tool": "model_response",
+        "args": {
+          "title": "The OA"
+        },
+        "result": {
+          "status": "recommendation",
+          "title": "The OA",
+          "reason": "Combina com a ambiência descrita pelo usuário e está na assinatura disponível.",
+          "platform": "Netflix",
+          "confidence": "medium",
+          "missing_info": "Nenhuma informação pendente na base simulada com dados do caso.",
+          "next_step": "Aguardar confirmação do usuário antes de registrar a ação final."
+        }
+      },
+      {
+        "tool": "record_decision",
+        "args": {
+          "user_id": "u-001",
+          "title": "The OA"
+        },
+        "result": {
+          "written": true,
+          "entry": {
+            "user_id": "u-001",
+            "title": "The OA",
+            "status": "recommendation"
+          }
+        }
+      }
+    ],
+    "decision": {
+      "status": "recommendation",
+      "title": "The OA",
+      "reason": "Combina com a ambiência descrita pelo usuário e está na assinatura disponível.",
+      "platform": "Netflix",
+      "confidence": "medium",
+      "missing_info": "Nenhuma informação pendente na base simulada com dados do caso.",
+      "next_step": "Aguardar confirmação do usuário antes de registrar a ação final."
+    },
+    "status": "recommendation"
+  },
+  {
+    "case_id": "divergence_user_vs_system",
+    "query": "Quero algo leve e sem ficar pensando demais. Me lembra Severance?",
+    "budget": {
+      "max_steps": 4,
+      "max_tool_calls": 4,
+      "token_budget": 1200
+    },
+    "trajectory": [
+      {
+        "tool": "catalog_search",
+        "args": {
+          "query": "Quero algo leve e sem ficar pensando demais. Me lembra Severance?",
+          "subscriptions": [
+            "Netflix",
+            "Prime Video"
+          ]
+        },
+        "result": [
+          "The Office",
+          "The OA",
+          "The Queen's Gambit"
+        ]
+      },
+      {
+        "tool": "check_availability",
+        "args": {
+          "candidates": [
+            "The Office",
+            "The OA",
+            "The Queen's Gambit"
+          ]
+        },
+        "result": [
+          {
+            "title": "The Office",
+            "platform": "Netflix",
+            "reason": "Um ambiente de trabalho com humor absurdamente cotidiano e personagens memoraveis."
+          },
+          {
+            "title": "The OA",
+            "platform": "Netflix",
+            "reason": "Uma mulher retorna depois de anos desaparecida com um conto de experiencias estranhas e filosoficas."
+          },
+          {
+            "title": "The Queen's Gambit",
+            "platform": "Netflix",
+            "reason": "Uma prodigio do xadrez tenta se afirmar em um mundo dominado por homens e pela pressao emocional."
+          }
+        ]
+      },
+      {
+        "tool": "model_response",
+        "args": {
+          "title": "The Office"
+        },
+        "result": {
+          "status": "recommendation",
+          "title": "The Office",
+          "reason": "A recomendação combina com a intenção de leveza e descontração, mesmo que a referência em Severance seja mais intensa.",
+          "platform": "Netflix",
+          "confidence": "medium",
+          "missing_info": "Nenhuma informação pendente na base simulada com dados do caso.",
+          "next_step": "Aguardar confirmação do usuário antes de registrar a ação final."
+        }
+      },
+      {
+        "tool": "record_decision",
+        "args": {
+          "user_id": "u-002",
+          "title": "The Office"
+        },
+        "result": {
+          "written": true,
+          "entry": {
+            "user_id": "u-002",
+            "title": "The Office",
+            "status": "recommendation"
+          }
+        }
+      }
+    ],
+    "decision": {
+      "status": "recommendation",
+      "title": "The Office",
+      "reason": "A recomendação combina com a intenção de leveza e descontração, mesmo que a referência em Severance seja mais intensa.",
+      "platform": "Netflix",
+      "confidence": "medium",
+      "missing_info": "Nenhuma informação pendente na base simulada com dados do caso.",
+      "next_step": "Aguardar confirmação do usuário antes de registrar a ação final."
+    },
+    "status": "recommendation"
+  },
+  {
+    "case_id": "missing_record",
+    "query": "Gosto de filmes que parecem um questionario de filosofia, me indica algo parecido com um filme que nao existe.",
+    "budget": {
+      "max_steps": 4,
+      "max_tool_calls": 4,
+      "token_budget": 1200
+    },
+    "trajectory": [
+      {
+        "tool": "catalog_search",
+        "args": {
+          "query": "Gosto de filmes que parecem um questionario de filosofia, me indica algo parecido com um filme que nao existe.",
+          "subscriptions": [
+            "Netflix"
+          ]
+        },
+        "result": [
+          "The OA",
+          "The Queen's Gambit",
+          "The Office"
+        ]
+      },
+      {
+        "tool": "check_availability",
+        "args": {
+          "candidates": [
+            "The OA",
+            "The Queen's Gambit",
+            "The Office"
+          ]
+        },
+        "result": [
+          {
+            "title": "The OA",
+            "platform": "Netflix",
+            "reason": "Uma mulher retorna depois de anos desaparecida com um conto de experiencias estranhas e filosoficas."
+          },
+          {
+            "title": "The Queen's Gambit",
+            "platform": "Netflix",
+            "reason": "Uma prodigio do xadrez tenta se afirmar em um mundo dominado por homens e pela pressao emocional."
+          },
+          {
+            "title": "The Office",
+            "platform": "Netflix",
+            "reason": "Um ambiente de trabalho com humor absurdamente cotidiano e personagens memoraveis."
+          }
+        ]
+      },
+      {
+        "tool": "termination",
+        "args": {
+          "reason": "expected no_match from domain case"
+        },
+        "result": "stop"
+      }
+    ],
+    "decision": {
+      "status": "no_match",
+      "title": null,
+      "reason": "Não há registro válido compatível com o caso solicitado.",
+      "platform": null,
+      "confidence": "low",
+      "missing_info": "O identificador ou o título pedido não existe no catálogo do domínio.",
+      "next_step": "Pedir refinamento ou esclarecer o pedido antes de tentar outra recomendação."
+    },
+    "status": "no_match"
+  },
+  {
+    "case_id": "no_action",
+    "query": "Estou com vontade de uma serie muito intensa e estranha, tipo Severance, mas sem pagar nada extra.",
+    "budget": {
+      "max_steps": 4,
+      "max_tool_calls": 4,
+      "token_budget": 1200
+    },
+    "trajectory": [
+      {
+        "tool": "catalog_search",
+        "args": {
+          "query": "Estou com vontade de uma serie muito intensa e estranha, tipo Severance, mas sem pagar nada extra.",
+          "subscriptions": [
+            "Prime Video"
+          ]
+        },
+        "result": []
+      },
+      {
+        "tool": "termination",
+        "args": {
+          "reason": "no candidate in subscribed catalog"
+        },
+        "result": "stop"
+      }
+    ],
+    "decision": {
+      "status": "no_match",
+      "title": null
+    },
+    "status": "no_match"
+  }
+]

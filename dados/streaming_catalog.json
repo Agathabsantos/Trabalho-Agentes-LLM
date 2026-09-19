@@ -1,0 +1,103 @@
+{
+  "titles": [
+    {
+      "title": "Severance",
+      "type": "serie",
+      "genres": ["suspense", "ficcao_cientifica", "drama"],
+      "mood": ["mal_estar", "misterio", "ambiente_corporativo"],
+      "platforms": ["Apple TV+", "Prime Video"],
+      "rating": "16+",
+      "synopsis": "Funcionarios em uma empresa descobrem que suas memorias foram fragmentadas, criando uma atmosfera de estranhamento constante.",
+      "reviews": ["A sensacao de mal estar e constante", "o clima inquietante e melhor que a trama"],
+      "available_to": ["Apple TV+", "Prime Video"]
+    },
+    {
+      "title": "Dark",
+      "type": "serie",
+      "genres": ["suspense", "ficcao_cientifica", "drama"],
+      "mood": ["mal_estar", "misterio", "tempo"],
+      "platforms": ["Netflix"],
+      "rating": "16+",
+      "synopsis": "Uma pequena cidade enfrenta uma serie de eventos estranhos ligados a uma ligacao temporal quase impossivel.",
+      "reviews": ["o clima de inquietacao e o que chama atencao", "sentimento de que algo esta errado o tempo todo"],
+      "available_to": ["Netflix"]
+    },
+    {
+      "title": "The Leftovers",
+      "type": "serie",
+      "genres": ["drama", "misterio"],
+      "mood": ["melancolia", "luto", "ambiente_pesado"],
+      "platforms": ["Max"],
+      "rating": "16+",
+      "synopsis": "Depois de um evento inexplicavel, pessoas tentam lidar com perda, culpa e vazio existencial.",
+      "reviews": ["a serie e emocionalmente densa", "a atmosfera de luto e mais forte do que o misterio"],
+      "available_to": ["Max"]
+    },
+    {
+      "title": "The OA",
+      "type": "serie",
+      "genres": ["ficcao_cientifica", "drama"],
+      "mood": ["misterio", "surreal", "ambiente_tenso"],
+      "platforms": ["Netflix"],
+      "rating": "14+",
+      "synopsis": "Uma mulher retorna depois de anos desaparecida com um conto de experiencias estranhas e filosoficas.",
+      "reviews": ["a atmosfera estranha e cativante", "o mistério e a sensação de desconforto se sobrepõem"],
+      "available_to": ["Netflix"]
+    },
+    {
+      "title": "Servant",
+      "type": "serie",
+      "genres": ["terror", "drama"],
+      "mood": ["mal_estar", "ambiente_quieto", "suspense"],
+      "platforms": ["Apple TV+"],
+      "rating": "14+",
+      "synopsis": "Uma família vive em um limbo perturbador depois de um evento emocional e espiritual surreal.",
+      "reviews": ["a ansiedade e o desconforto sao constantes", "muito tenso e estranho"],
+      "available_to": ["Apple TV+"]
+    },
+    {
+      "title": "The Queen's Gambit",
+      "type": "serie",
+      "genres": ["drama"],
+      "mood": ["determinacao", "inteligencia", "ascensao"],
+      "platforms": ["Netflix"],
+      "rating": "14+",
+      "synopsis": "Uma prodigio do xadrez tenta se afirmar em um mundo dominado por homens e pela pressao emocional.",
+      "reviews": ["muito inspiradora e focada", "o talento e a disciplina sao o centro"],
+      "available_to": ["Netflix"]
+    },
+    {
+      "title": "The Office",
+      "type": "serie",
+      "genres": ["comedia"],
+      "mood": ["leve", "sarcastico", "cotidiano"],
+      "platforms": ["Netflix"],
+      "rating": "14+",
+      "synopsis": "Um ambiente de trabalho com humor absurdamente cotidiano e personagens memoraveis.",
+      "reviews": ["bem leve e engraçada", "o humor e mais cotidiano do que intenso"],
+      "available_to": ["Netflix"]
+    },
+    {
+      "title": "Only Murders in the Building",
+      "type": "serie",
+      "genres": ["comedia", "misterio"],
+      "mood": ["leve", "enigma", "carismático"],
+      "platforms": ["Hulu", "Disney+"],
+      "rating": "14+",
+      "synopsis": "Tres vizinhos de um predio investigam crimes em um mix de humor e mistério.",
+      "reviews": ["engraçada sem perder o misterio", "o clima e leve, mas curioso"],
+      "available_to": ["Hulu", "Disney+"]
+    },
+    {
+      "title": "The Bear",
+      "type": "serie",
+      "genres": ["comedia", "drama"],
+      "mood": ["intenso", "proximo", "caotico"],
+      "platforms": ["Hulu"],
+      "rating": "16+",
+      "synopsis": "Um chef de cozinha tenta transformar um restaurante de bairro em um lugar de alto nivel.",
+      "reviews": ["caotico e intenso", "muito frenético"],
+      "available_to": ["Hulu"]
+    }
+  ]
+}
