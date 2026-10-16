@@ -1,0 +1,28 @@
+Exercício 12 — evidências de verificação do model card
+Data: 2026-10-16
+Suíte de avaliação: v1.0.0
+
+Comando: .venv/bin/python -m unittest discover -s tests -v
+Saída:
+test_busca_filtra_assinatura_e_classificacao (test_authority_controls.TestLimitesDeAutoridade.test_busca_filtra_assinatura_e_classificacao) ... ok
+test_recusa_recomendacao_repetida (test_authority_controls.TestLimitesDeAutoridade.test_recusa_recomendacao_repetida) ... ok
+test_recusa_titulo_acima_da_classificacao (test_authority_controls.TestLimitesDeAutoridade.test_recusa_titulo_acima_da_classificacao) ... ok
+test_recusa_titulo_fora_da_assinatura (test_authority_controls.TestLimitesDeAutoridade.test_recusa_titulo_fora_da_assinatura) ... ok
+test_registra_e_reverte_recomendacao_valida (test_authority_controls.TestLimitesDeAutoridade.test_registra_e_reverte_recomendacao_valida) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.011s
+
+OK
+
+Comando: .venv/bin/python src/verificador.py
+Trechos da saída:
+SUITE DE AVALIACAO: v1.0.0 (2026-10-16)
+ACERTOS:     5/5   (minimo exigido: 4/5)
+INVARIANTES: 0 violacoes   (maximo tolerado: 0)
+RESULTADO: APROVADO
+
+Comando: .venv/bin/python src/verificador.py --autoteste
+Trechos da saída:
+SUITE DE AVALIACAO: v1.0.0 (2026-10-16)
+AUTOTESTE: OK — o verificador pega os 4 erros

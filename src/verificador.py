@@ -31,6 +31,8 @@ LOG_PATH = ROOT / "logs" / "demo_runs.json"
 HISTORICO_SEED = ROOT / "dados" / "historico_seed.jsonl"
 
 MINIMO_ACERTOS = 4
+VERSAO_SUITE = "1.0.0"
+DATA_VERSAO_SUITE = "2026-10-16"
 
 
 def historico_inicial():
@@ -103,6 +105,7 @@ def autoteste():
          {"title": "O Enigma de Kessler", "platform": "Netflix"}),
     ]
 
+    print(f"SUITE DE AVALIACAO: v{VERSAO_SUITE} ({DATA_VERSAO_SUITE})")
     print("\nAUTOTESTE DO VERIFICADOR (decisoes propositalmente erradas)")
     print("-" * 72)
     falhou = False
@@ -155,6 +158,7 @@ def main():
     acertos = 0
     todas_violacoes = []
 
+    print(f"SUITE DE AVALIACAO: v{VERSAO_SUITE} ({DATA_VERSAO_SUITE})")
     print(f"{'CASO':<34}{'ESPERADO':<16}{'OBTIDO':<16}{'ACERTO':<9}INVARIANTES")
     print("-" * 92)
 
