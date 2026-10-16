@@ -9,6 +9,11 @@ __pycache__/
 # banco derivado: reconstruido a cada execucao a partir de
 # dados/streaming_catalog.json e dados/historico_seed.jsonl
 dados/catalogo.db
+dados/catalogo.db-shm
+dados/catalogo.db-wal
+dados/checkpoints.sqlite
+dados/checkpoints.sqlite-shm
+dados/checkpoints.sqlite-wal
 
 # assistente de codigo: instrucoes e estado locais, fora da entrega
 CLAUDE.md

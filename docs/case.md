@@ -1,10 +1,15 @@
 # Case — recomendação do próximo título a partir do motivo do gosto
 
-> Versão 2 — revisada em 19/09/2026. A v1 está no histórico do git.
-> O que mudou: as ferramentas passaram a refletir a implementação real, o
-> verificador virou código executável, o critério de sucesso ganhou a métrica
-> assimétrica, e a linha de base foi rebaixada de "medida" para "estimativa a
-> medir", porque a medição ainda não foi feita.
+> Versão 3 — consolidada em 16/10/2026. As versões anteriores estão no histórico
+> do Git. As medições da Parte 1 foram mantidas, mas as seções finais registram
+> o sistema LangGraph da Parte 2 e corrigem planos que não se materializaram.
+
+> **Escopo das versões:** as seções 1–9 preservam a descrição e as medições da
+> Parte 1. A consolidação da Parte 2, incluindo o que passou a ser executado,
+> o que não foi implementado e as descobertas adicionais do domínio, está nas
+> seções 10–12 e nos documentos atuais de `docs/`. Onde o plano antigo diverge
+> do grafo atual, prevalece a descrição da Parte 2, não o futuro hipotético da
+> Parte 1.
 
 ## 1. O problema
 
@@ -50,7 +55,7 @@ O último é o caso difícil que define o sistema: **a mesma frase de entrada es
 - **Canal:** chat dentro do app de recomendação. O canal é chat porque a entrada é texto livre que o usuário não consegue estruturar sozinho — se ele soubesse preencher um formulário com "clima: mal-estar constante", não precisaria do sistema. **O que a Parte 1 entrega desse canal:** só o laço por trás dele. Não há interface de chat ainda; o agente roda por linha de comando, os pedidos vêm de `dados/cases.json` e a saída é o JSON abaixo. O chat é o canal **previsto**, e a interface é escopo da Parte 2 junto com o refinamento em várias trocas.
 - **Quem começa:** o usuário. O agente é reativo, não proativo, e não manda notificação.
 - **Quantas trocas:** na Parte 1, **uma**. O contexto da conta (assinatura, classificação, histórico) é injetado pelo código, então o agente não precisa perguntar o que o sistema já sabe. O refinamento em várias trocas é escopo da Parte 2 — ver §10 (LangChain).
-- **O que devolve:** um objeto JSON com `status`, `title`, `reason`, `platform`, `confidence`, `missing_info` e `next_step`. O contrato está em `prompts/system.txt`.
+- **O que devolve:** um objeto JSON com `status`, `title`, `reason`, `platform`, `confidence`, `missing_info` e `next_step`. O contrato da Parte 1 está em `src/prompts/system.txt`; o contrato atual está em `src/graph.py:RecommendationResult`.
 - **Como termina:** com `recommendation` e um título, ou com `no_match` e o motivo pelo qual o catálogo assinado não atende ao pedido. Nunca com uma sugestão inventada.
 
 ### 2.3 Diálogo de exemplo
@@ -298,7 +303,7 @@ Os casos difíceis, nomeados explicitamente:
 |---|---|---|
 | `caso_simples` | o caminho feliz tem que funcionar | Dark |
 | `divergencia_usuario_vs_sistema` | usuário cita Severance (intensa) mas pede "algo leve" — **a referência contradiz o pedido** | The Office |
-| `registro_inexistente` | o título de referência não existe; a ferramenta devolve erro e **o agente tem que contornar sem inventar** | `no_match` |
+| `registro_inexistente` | o título de referência não existe; se a pessoa também informou um clima, o grafo busca por esse clima; caso contrário pede confirmação, sem inventar | `no_match` no caso original da Parte 1 |
 | `nao_dispara_acao` | a única plataforma assinada não tem nada dentro da classificação do perfil — **não pode recomendar nada** | `no_match` |
 | `nao_repete_recomendacao` | o melhor candidato já foi oferecido antes — **tem que oferecer o próximo** | The OA |
 
@@ -310,15 +315,51 @@ Este tema **não toca dado sensível** — não há dado pessoal identificável,
 
 A única informação com alguma sensibilidade é o histórico de consumo, que em produção seria dado pessoal sob LGPD. Na Parte 1 ele é inventado; se o projeto crescer, o histórico não deve sair do banco para o contexto do modelo além do mínimo (hoje só a lista de títulos já vistos, sem datas nem frequência).
 
-## 10. Espaço para o que ainda vem
+## 10. O que a Parte 2 implementou — e o que não implementou
 
-- [x] **RAG (Parte 2):** as **avaliações de espectadores** do catálogo. Hoje elas estão como lista de strings em `streaming_catalog.json` e são passadas inteiras ao modelo. É exatamente o formato que não escala: com 500 títulos, passar todas as avaliações estoura a janela. Viram base vetorial, consultada por trecho relevante ao clima pedido.
-- [x] **MCP (Parte 2):** `src/catalogo_db.py` vira servidor MCP. As 4 ferramentas já têm esquema JSON declarado em `ferramentas.py:ESQUEMA_FERRAMENTAS` — é esse esquema que migra.
-- [x] **LangChain (Parte 2):** a orquestração do laço de `agent.py` (estado, orçamento, terminação). É a parte que hoje é código nosso e que a biblioteca resolve, liberando esforço para o refinamento em múltiplas trocas.
-- [x] **Multiagente (Parte 3):** dois agentes. Um **curador**, que decide o clima e escolhe o candidato, e um **auditor**, que recebe a escolha e verifica se a evidência citada realmente sustenta a recomendação — hoje isso é só a validação de invariantes em código, que pega violação de regra mas não pega justificativa inventada.
+O sistema consolidado roda em LangGraph (`src/graph.py`), com checkpoint
+SQLite, recuperação lexical das avaliações curadas em `dados/rag_corpus.jsonl`,
+consulta estruturada ao catálogo/histórico, saída Pydantic e pausa obrigatória
+antes de registrar a recomendação. A tabela de escopo e as decisões estão em
+`docs/arquitetura.md`, `docs/rag.md` e `docs/memoria.md`.
 
-## 11. O maior risco
+Não há servidor MCP nem conexão com TMDB: o catálogo, as avaliações, as
+plataformas e as classificações continuam sendo fixtures sintéticas da Parte 1.
+Também não há busca vetorial: a escala pequena e a natureza de frase literal
+das avaliações justificaram busca textual lexical. O sistema não afirma
+disponibilidade atual em serviços reais nem usa `region` como filtro.
+
+## 11. Complemento do domínio — o que a implementação tornou explícito
+
+1. **“Parecido” não significa mesmo gênero.** O pedido precisa ser lido como
+  uma preferência por sensação (por exemplo, desconforto em vez de ficção
+  científica). A referência é pista, não autorização para sobrepor uma
+  preferência explícita como “quero algo leve”.
+2. **Acesso é interseção, não atributo do título isolado.** A elegibilidade
+  depende simultaneamente do título, da plataforma contratada, da região e do
+  perfil da sessão. No fixture atual a região não é aplicada; por isso a
+  plataforma é apenas “listada no fixture”, não disponibilidade garantida.
+3. **“Já recomendado” é diferente de “assistido” ou “gostei”.** A base atual
+  só registra recomendação e recusa seed; não há evento confirmado de play.
+  Aprovar gravar uma recomendação no histórico não significa que a pessoa
+  gostou dela, portanto o agente não aprende gosto automaticamente.
+4. **A exceção de interação muda a arquitetura.** Se o pedido de clima diverge
+  do título citado, vence o pedido explícito. Se não houver clima suficiente,
+  o agente pergunta; se o título citado não existir, registra o erro e só
+  continua quando a própria mensagem contém um clima buscável. Sem esse clima,
+  pede confirmação; não inventa substituto.
+5. **O passo aparentemente único contém três decisões:** interpretar a
+  preferência, aplicar filtros rígidos em código e apresentar uma proposta
+  para confirmação. O humano confirma a escrita de histórico, não a
+  elegibilidade — essa continua protegida por código.
+
+Os nove títulos e suas avaliações são fixtures autorais e pequenas, não uma
+amostra representativa de espectadores. As limitações dessa descoberta estão
+registradas em `docs/rag.md`; a Parte 3 precisará obter corpus licenciado e
+dados reais antes de alegar qualidade de recomendação em produção.
+
+## 12. O maior risco e a próxima entrega
 
 **O risco real:** as tags de clima do catálogo são escritas por nós, e o casamento entre a frase do usuário e essas tags é por substring. Isso funciona com 9 títulos e tags que nós mesmos escolhemos. Com um catálogo real, ou as tags não existem, ou são de gênero, e o mecanismo inteiro deixa de funcionar — o sistema vira um buscador de palavra-chave com um LLM caro por cima.
 
-**Plano B:** substituir o casamento por tag pelo casamento semântico sobre as **avaliações de espectadores**, que é o RAG da Parte 2. As avaliações existem em catálogo real (TMDB, IMDb) e descrevem clima — "a sensação de mal-estar é constante" — que é justamente o que nenhum campo estruturado carrega. Por isso o RAG da Parte 2 não é enfeite: ele é o que mantém o tema de pé fora do conjunto de teste.
+**Plano de evolução:** substituir os fixtures por avaliações obtidas de fonte autorizada e medir busca lexical contra busca vetorial. O projeto não consultou TMDB nem IMDb; uma integração externa exige validar licença, cobertura, frescor e disponibilidade. A escolha atual de busca textual não prova que funcione em escala ou em texto livre amplo.

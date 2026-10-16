@@ -1,0 +1,12 @@
+[
+  {"id":"q01","question":"Em quais plataformas o catalogo lista Dark?","form":"consulta estruturada","answer_source":"dados/streaming_catalog.json:Dark.platforms","exception":false,"in_corpus":true},
+  {"id":"q02","question":"O usuario u-005 pode receber Dark novamente?","form":"consulta estruturada","answer_source":"dados/historico_seed.jsonl:u-005","exception":true,"in_corpus":true},
+  {"id":"q03","question":"Em que avaliacao aparece a inquietacao de Dark?","form":"busca textual","answer_source":"dark-review-1","exception":false,"in_corpus":true},
+  {"id":"q04","question":"Qual trecho de Severance fala em mal-estar constante?","form":"busca textual","answer_source":"severance-review-1","exception":false,"in_corpus":true},
+  {"id":"q05","question":"Quais avaliacoes descrevem um clima leve e cotidiano?","form":"busca textual","answer_source":"office-review-1; office-review-2","exception":false,"in_corpus":true},
+  {"id":"q06","question":"Que titulo pode agradar a quem busca estranhamento e desconforto?","form":"busca vetorial","answer_source":"oa-review-2; dark-review-2","exception":false,"in_corpus":true},
+  {"id":"q07","question":"Que titulos compartilham tags de clima com Severance?","form":"grafo (ou JOIN estruturado neste corpus pequeno)","answer_source":"dados/streaming_catalog.json:titles.mood","exception":false,"in_corpus":true},
+  {"id":"q08","question":"Quais climas aparecem com maior frequencia nas avaliacoes?","form":"agregacao pre-calculada","answer_source":"dados/rag_corpus.jsonl:kind=review,status=active","exception":false,"in_corpus":true},
+  {"id":"q09","question":"A pessoa pede algo leve apesar de citar Severance; o pedido explicito vence?","form":"nenhuma recuperacao; regra de conversa","answer_source":"docs/case.md:politica de divergencia","exception":true,"in_corpus":true},
+  {"id":"q10","question":"Qual titulo do corpus tem tema de viagens submarinas?","form":"busca vetorial, seguida de recusa por ausencia de evidencia","answer_source":null,"exception":false,"in_corpus":false}
+]

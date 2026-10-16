@@ -32,6 +32,34 @@ class ErroDeAcesso(Exception):
     """Falha na camada de acesso (banco ausente, corrompido, indisponivel)."""
 
 
+def _ensure_memory_schema(conn: sqlite3.Connection) -> None:
+    """Migra bancos da Parte 1 sem apagar histórico já persistido."""
+    conn.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS acoes_idempotentes (
+            chave TEXT PRIMARY KEY,
+            history_id INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS episodios (
+            user_id TEXT NOT NULL,
+            titulo TEXT NOT NULL,
+            contexto TEXT NOT NULL,
+            chave TEXT PRIMARY KEY,
+            criado_em TEXT NOT NULL
+        );
+        CREATE VIRTUAL TABLE IF NOT EXISTS episodios_fts USING fts5(
+            contexto, user_id UNINDEXED, titulo UNINDEXED, chave UNINDEXED
+        );
+        CREATE TABLE IF NOT EXISTS memoria_semantica (
+            user_id TEXT PRIMARY KEY,
+            resumo TEXT NOT NULL,
+            atualizado_em TEXT NOT NULL
+        );
+        """
+    )
+    conn.commit()
+
+
 def normalizar(texto: str) -> str:
     """Remove acentos e uniformiza separadores, para comparar clima com tags."""
     if not texto:
@@ -50,6 +78,7 @@ class CatalogoDB:
         try:
             self.conn = sqlite3.connect(self.db_path)
             self.conn.row_factory = sqlite3.Row
+            _ensure_memory_schema(self.conn)
         except sqlite3.Error as exc:
             raise ErroDeAcesso(f"nao foi possivel abrir o banco: {exc}") from exc
 
@@ -131,6 +160,91 @@ class CatalogoDB:
             raise ErroDeAcesso(f"falha ao gravar no historico: {exc}") from exc
         return {"gravado": True, "id": cur.lastrowid, "user_id": user_id, "titulo": titulo}
 
+    def registrar_idempotente(self, user_id: str, titulo: str, desfecho: str,
+                              contexto: str, chave: str,
+                              preferencia: str | None = None) -> dict:
+        """Grava recomendacao e episodio uma unica vez por conteudo canonico."""
+        try:
+            self.conn.execute("BEGIN IMMEDIATE")
+            existente = self.conn.execute(
+                "SELECT history_id FROM acoes_idempotentes WHERE chave = ?", (chave,)
+            ).fetchone()
+            if existente:
+                self.conn.commit()
+                return {
+                    "gravado": False,
+                    "ja_existia": True,
+                    "id": existente["history_id"],
+                    "chave_idempotencia": chave,
+                }
+            cur = self.conn.execute(
+                "INSERT INTO historico (user_id, titulo, desfecho) VALUES (?, ?, ?)",
+                (user_id, titulo, desfecho),
+            )
+            history_id = cur.lastrowid
+            self.conn.execute(
+                "INSERT INTO episodios (user_id, titulo, contexto, chave, criado_em) "
+                "VALUES (?, ?, ?, ?, datetime('now'))",
+                (user_id, titulo, contexto, chave),
+            )
+            self.conn.execute(
+                "INSERT INTO episodios_fts (contexto, user_id, titulo, chave) "
+                "VALUES (?, ?, ?, ?)",
+                (contexto, user_id, titulo, chave),
+            )
+            self.conn.execute(
+                "INSERT INTO acoes_idempotentes (chave, history_id) VALUES (?, ?)",
+                (chave, history_id),
+            )
+            if preferencia:
+                self.conn.execute(
+                    "INSERT INTO memoria_semantica (user_id, resumo, atualizado_em) "
+                    "VALUES (?, ?, datetime('now')) ON CONFLICT(user_id) DO UPDATE SET "
+                    "resumo = excluded.resumo, atualizado_em = excluded.atualizado_em",
+                    (user_id, preferencia),
+                )
+            self.conn.commit()
+        except sqlite3.Error as exc:
+            self.conn.rollback()
+            raise ErroDeAcesso(f"falha ao gravar memoria idempotente: {exc}") from exc
+        return {
+            "gravado": True,
+            "ja_existia": False,
+            "id": history_id,
+            "chave_idempotencia": chave,
+        }
+
+    def buscar_episodios(self, user_id: str, pergunta: str, limite: int = 5) -> list[dict]:
+        """Busca episodios do usuario por relevancia lexical via SQLite FTS5."""
+        termos = [t for t in normalizar(pergunta).split("_") if len(t) > 1]
+        if not termos:
+            return []
+        consulta = " OR ".join('"' + termo.replace('"', '') + '"' for termo in termos)
+        linhas = self.conn.execute(
+            "SELECT e.titulo, e.contexto, e.criado_em, bm25(episodios_fts) AS score "
+            "FROM episodios_fts JOIN episodios e ON e.chave = episodios_fts.chave "
+            "WHERE episodios_fts MATCH ? AND e.user_id = ? "
+            "ORDER BY score, e.criado_em DESC LIMIT ?",
+            (consulta, user_id, limite),
+        ).fetchall()
+        return [dict(linha) for linha in linhas]
+
+    def obter_preferencia(self, user_id: str) -> dict | None:
+        linha = self.conn.execute(
+            "SELECT resumo, atualizado_em FROM memoria_semantica WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        return dict(linha) if linha else None
+
+    def atualizar_preferencia(self, user_id: str, resumo: str) -> None:
+        self.conn.execute(
+            "INSERT INTO memoria_semantica (user_id, resumo, atualizado_em) "
+            "VALUES (?, ?, datetime('now')) ON CONFLICT(user_id) DO UPDATE SET "
+            "resumo = excluded.resumo, atualizado_em = excluded.atualizado_em",
+            (user_id, resumo),
+        )
+        self.conn.commit()
+
     def remover_registro(self, registro_id: int):
         """Reversao da escrita acima. E o que torna `registrar` reversivel de fato."""
         self.conn.execute("DELETE FROM historico WHERE id = ?", (registro_id,))
@@ -180,6 +294,25 @@ def construir_banco(db_path: Path = DB_PATH, forcar: bool = False) -> Path:
             user_id  TEXT NOT NULL,
             titulo   TEXT NOT NULL,
             desfecho TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS acoes_idempotentes (
+            chave TEXT PRIMARY KEY,
+            history_id INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS episodios (
+            user_id TEXT NOT NULL,
+            titulo TEXT NOT NULL,
+            contexto TEXT NOT NULL,
+            chave TEXT PRIMARY KEY,
+            criado_em TEXT NOT NULL
+        );
+        CREATE VIRTUAL TABLE IF NOT EXISTS episodios_fts USING fts5(
+            contexto, user_id UNINDEXED, titulo UNINDEXED, chave UNINDEXED
+        );
+        CREATE TABLE IF NOT EXISTS memoria_semantica (
+            user_id TEXT PRIMARY KEY,
+            resumo TEXT NOT NULL,
+            atualizado_em TEXT NOT NULL
         );
         """
     )

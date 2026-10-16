@@ -1,380 +1,225 @@
-# Arquitetura
+# Arquitetura do agente de recomendação — Parte 2
 
-> ## ⚠️ Leia este aviso antes do resto do documento
->
-> Este arquivo tem **duas arquiteturas**, e elas são diferentes de propósito:
->
-> - a **§0** descreve o que está **implementado na Parte 1**: catálogo em
->   SQLite local, 4 ferramentas, laço de uma troca. É o que roda hoje, e é o
->   que o item 4.4 da entrega pede;
-> - a **§1 em diante** descreve a **arquitetura-alvo da Parte 2**: catálogo no
->   TMDB, 6 ferramentas, conversa de até 6 trocas com refinamento. **Nada disso
->   está implementado.** O documento foi escrito antes do código, e foi mantido
->   porque é o plano para a próxima entrega.
->
-> Onde os dois divergem, vale a §0. O `docs/case.md` descreve a §0.
+> Estado implementado em 2026-10-16. Os dados de títulos, disponibilidade e
+> avaliações continuam sintéticos. O contrato de entrada é texto livre; os
+> metadados da conta chegam do sistema chamador, não de um formulário preenchido
+> pela pessoa.
 
----
+## Diagrama executável
 
-## 0. A arquitetura implementada na Parte 1
+```text
+ENTRADA
+  mensagem em texto livre + user_id + session_id/thread_id
+  + assinaturas, região e classificação fornecidas pelo app
+          |
+          v
++-----------------------+
+| triage                | -- chama modelo 0 ou 1 vez, JSON Pydantic validado
+| intenção, clima,      | -- sem API key: parser local explícito
+| referência do título  | -- SELECT do catálogo para identificar referência
++-----------+-----------+
+            | condicional: código verifica rota e suficiência
+            +---- finish: incompleta / ambígua / fora de escopo / referência ausente sem clima explícito
+            |
+            v
++-----------------------+
+| retrieve              | -- SQL: assinatura, classificação, histórico, exclusões
+| consulta + RAG textual| -- busca lexical no corpus curado; até 12 trechos
++-----------+-----------+
+            | condicional: código lê route
+            +---- finish: prazo total excedido -> END
+            +---- propose: recuperação concluída
+            |
+            v
++-----------------------+
+| propose               | -- código escolhe candidato elegível com evidência
+| proposta rastreável   | -- nenhuma ação persistente antes da pausa
++-----------+-----------+
+            | condicional: evidência/candidato existe?
+            +---- não: no_match -> END
+            |
+            v
++-----------------------+
+| approval              | -- interrupt: responsável pela conta lê a ação exata
+| HITL + edição         | -- aprova / edita / rejeita; validação continua em código
++-----------+-----------+
+            | condicional: código valida resposta e prazo
+            +---- rejeição / edição inválida / expirada -> END, sem escrita
+            |
+            v
++-----------------------+
+| persist               | -- transação SQLite + SHA-256 do conteúdo como chave
+| histórico + episódio  | -- grava uma vez; semântica só com consentimento explícito
++-----------+-----------+
+            | incondicional
+            v
+           END
 
-```
-                          ENTRADA
-              pedido em texto livre + contexto da conta
-                    (assinatura, classificação, user_id)
-                               |
-                               v
-  +--------------------------------------------------------------+
-  |                    LAÇO  (src/agent.py)                       |
-  |                                                               |
-  |   estado explícito (EstadoAgente)      orçamento              |
-  |     clima_inferido                       max_passos ......  8 |
-  |     candidatos_vistos                    max_ferramentas . 10 |
-  |     titulos_recusados_pela_escrita       max_tokens ..... 12k |
-  |     passos / chamadas / tokens                                |
-  |                                                               |
-  |   a cada volta:                                               |
-  |     1. orçamento estourou? -> PARA e registra o motivo        |
-  |     2. pede a próxima ação ao MOTOR                           |
-  |     3. executa a ferramenta, registra na trajetória           |
-  |     4. devolve o resultado (ou o erro) ao MOTOR               |
-  +---------------------------+-----------------------------------+
-                              |
-              +---------------+----------------+
-              |                                |
-              v                                v
-   +---------------------+         +--------------------------+
-   |  MotorModelo        |         |  MotorHeuristico         |
-   |  (src/motores.py)   |         |  (src/motores.py)        |
-   |                     |         |                          |
-   |  DECIDE: qual       |         |  regras fixas, sem LLM   |
-   |  ferramenta chamar, |         |  só para demonstrar o    |
-   |  qual clima buscar, |         |  laço sem chave de API   |
-   |  qual candidato     |         |  (carimbado no log)      |
-   |  escolher           |         |                          |
-   |  via tool calling   |         |                          |
-   +---------------------+         +--------------------------+
-              |
-              v
-  +--------------------------------------------------------------+
-  |               FERRAMENTAS  (src/ferramentas.py)               |
-  |    erro volta como DADO: {erro, detalhe, como_corrigir}       |
-  |                                                               |
-  |   consultar_titulo ........ leitura                           |
-  |   buscar_candidatos ....... leitura  <- filtra aqui, em CÓDIGO|
-  |   consultar_historico ..... leitura                           |
-  |   registrar_recomendacao .. ESCRITA  <- revalida 3 invariantes|
-  +---------------------------+-----------------------------------+
-                              |
-                              v
-  +--------------------------------------------------------------+
-  |          CAMADA DE ACESSO  (src/catalogo_db.py)               |
-  |          SQLite: dados/catalogo.db                            |
-  |          tabelas: titulos, historico                          |
-  |          -> na Parte 2 isto vira servidor MCP                 |
-  +--------------------------------------------------------------+
-
-  CONDIÇÕES DE PARADA (todas registradas em motivo_da_parada):
-    resposta_final ................ o motor devolveu o JSON
-    orcamento_passos_estourado .... > 8 voltas
-    orcamento_ferramentas_estourado > 10 chamadas
-    orcamento_tokens_estourado .... > 12.000 tokens
-    erro_do_modelo ................ o provedor falhou (NÃO é escondido)
-
-  VERIFICAÇÃO (fora do laço, src/verificador.py):
-    logs/demo_runs.json  x  gabarito de dados/cases.json
-    + 4 invariantes conferidas contra o banco
-    + --autoteste prova que o verificador não é vazio
+RECURSOS consultados: dados/catalogo.db (SQLite) + dados/rag_corpus.jsonl
+CHECKPOINT: dados/checkpoints.sqlite, endereço = session_id/thread_id
+LOG: logs/part2_runs.json; a trajetória registra nós e chamadas de recuperação
 ```
 
-### Onde está a decisão que justifica um agente, e não um workflow
+### Topologia conferida do objeto de produção
 
-Em **dois pontos**, ambos no `MotorModelo`, e ambos impossíveis de resolver com um `if`:
+Comando: `python conferir_grafo.py`. O script importa `get_graph()` usado pelo
+CLI; não cria um grafo demonstrativo.
 
-**(1) Qual clima buscar, quando a referência contradiz o pedido.** No caso `divergencia_usuario_vs_sistema` o usuário cita Severance — que o catálogo marca como `mal_estar, misterio` — e no mesmo texto pede "algo leve". Um workflow tem que escolher, na hora de escrever o código, se busca pelo clima da referência ou pelo texto do pedido; qualquer das duas escolhas erra metade dos casos. É o modelo que lê as duas coisas e decide qual vence, em tempo de execução, sobre um espaço de climas que não é uma lista fechada.
+```text
+NOS
+approval
+persist
+propose
+retrieve
+triage
+ARESTAS
+START -> triage
+approval -> END [condicional]
+approval -> persist [condicional]
+persist -> END
+propose -> END [condicional]
+propose -> approval [condicional]
+retrieve -> END [condicional]
+retrieve -> propose [condicional]
+triage -> END [condicional]
+triage -> retrieve [condicional]
+```
 
-**(2) O que fazer quando a ferramenta falha.** No caso `registro_inexistente`, `consultar_titulo` devolve `{"erro": "registro_inexistente", ...}`. A resposta certa depende do que falhou: se o título de referência não existe, encerrar sem inventar; se a lista de candidatos veio vazia, encerrar sem relaxar filtro; se a escrita foi recusada, tentar o próximo candidato. São três respostas diferentes para três erros, decididas a partir do **resultado intermediário**, não da entrada — que é exatamente o que um roteador, cuja rota é fixada na entrada, não faz.
+### Quem decide cada aresta condicional
 
-Todo o resto do desenho é código, e deve continuar sendo. O filtro por assinatura, a classificação, o histórico, a validação da escrita e as condições de parada são determinísticos: colocá-los no modelo seria pagar tokens por algo que um `WHERE` resolve, e abrir mão de garantia.
+| Origem | Destino | Condição observável | Degrau que decide | Por quê |
+|---|---|---|---|---|
+| `triage` | `retrieve` | intenção de recomendação e clima válido | modelo interpreta (se configurado); **código** valida campos e roteia | texto livre exige julgamento semântico; destino permanece allowlist de código |
+| `triage` | `END` | vazio, ambíguo, fora de escopo, erro de interpretação ou referência ausente sem clima | **código** após interpretação tipada | condição é enum/boolean/`None`; nenhum embedding |
+| `retrieve` | `propose` | deadline vigente; consulta concluída | **código** | relógio e rota determinística |
+| `retrieve` | `END` | prazo total esgotado | **código** | comparação numérica de tempo |
+| `propose` | `approval` | existe candidato com trecho ativo | **código** | teste de lista vazia/evidência, não julgamento adicional |
+| `propose` | `END` | nenhum candidato/evidência | **código** | condição verificável |
+| `approval` | `persist` | pessoa aprovou e argumentos editados passam os filtros | **código + humano** | humano consente; código valida invariantes |
+| `approval` | `END` | rejeição, expiração ou edição inválida | **código** | valores estruturados e prazo |
 
----
+**Embedding não decide nenhuma aresta.** Não há embeddings no projeto. O modelo
+só interpreta entrada aberta em `triage`; as condições e destinos das arestas
+são decididos/validados em código.
 
-## 1. Arquitetura-alvo da Parte 2 (NÃO implementada)
+As condições são determinadas por código; o modelo só ajuda a interpretar o
+texto livre no nó `triage`. Saída estruturada reduz erro de formato, mas não
+prova que o rótulo semântico escolhido seja correto. Sem chave de API, o grafo
+usa regras locais identificadas no log e a cobertura de idioma é menor.
 
-## 1. Entrada
+Se uma referência citada não existir, `triage` registra
+`lookup_error=registro_inexistente`. Se o mesmo texto contém um clima explícito,
+o fluxo continua usando esse clima e sem a referência; se não, devolve
+`clarification`. Assim o grafo contorna um registro ausente somente com
+informação que a pessoa forneceu, nunca com um título inventado.
 
-**O que chega ao sistema.** O que chega é texto livre. A pessoa escreve o nome de um título que gostou e pede algo parecido, às vezes já explicando o que agradou nele, na maioria das vezes sem explicar nada. Durante a conversa, o mesmo campo de texto também recebe a resposta da pessoa quando o agente pergunta de que ela gostou especificamente, e recebe a reação dela às sugestões, coisas como "essa eu já vi", "não curti essa" ou "vou ver essa". Junto com o texto, o sistema carrega alguns dados que ele já tem guardados e que não precisam ser perguntados: quais plataformas de streaming a pessoa assina, se a sessão tem alguma restrição de classificação indicativa ativa, e a lista do que já foi recomendado antes para ela.
+## Ferramentas, laço e fronteiras
 
-**De onde vem e quem dispara.** Quem começa é sempre a pessoa. O sistema não acorda sozinho e não manda notificação. É um app próprio de recomendação, não um recurso dentro de uma plataforma de streaming, então o usuário abre o app justamente porque já está com a intenção de descobrir o que assistir. O app não reproduz nada e não vende nada. Ele apenas diz qual é o próximo título e onde encontrá-lo.
-
-**Quão heterogêneo.** Todas as mensagens chegam pelo mesmo canal e todas são texto de chat, então a variedade é baixa. Mesmo assim, existem três tipos diferentes de mensagem dentro desse canal, e eles pedem tratamentos diferentes. A estimativa é que cerca de 60% sejam pedidos novos de recomendação, do tipo "gostei de tal série, me indica algo parecido". Outros 25% são respostas de refinamento, quando a pessoa está respondendo à pergunta que o agente fez sobre o que exatamente agradou naquele título. Os 15% restantes são reações a uma sugestão que o agente já deu, aceitando, recusando ou avisando que já assistiu àquele título. Essa diferença é o que justifica uma triagem simples na entrada, porque uma reação a uma sugestão antiga não precisa disparar uma busca inteira de novo.
-
-## 2. System
-
-**O system prompt, em uma frase.** Este agente é um curador que decide o próximo título a partir do motivo específico pelo qual a pessoa gostou de algo, e não a partir do rótulo de gênero. Ele não é um buscador genérico de catálogo, não reproduz conteúdo e não sugere nada que exija pagamento avulso.
-
-**As ferramentas.** Todas as consultas de conteúdo são feitas na The Movie Database (TMDB), que é a fonte de dados do projeto. São cinco ferramentas de leitura e uma de escrita.
-
-| Ferramenta | Fonte | Leitura ou escrita | Reversível |
+| Ferramenta/função | Leitura ou escrita | Reversível | Uso no grafo |
 |---|---|---|---|
-| `buscar_titulo(nome)` | TMDB | leitura | n/a |
-| `buscar_detalhes(id_tmdb)` | TMDB | leitura | n/a |
-| `buscar_avaliacoes(id_tmdb)` | TMDB | leitura | n/a |
-| `buscar_similares(id_tmdb)` | TMDB | leitura | n/a |
-| `verificar_disponibilidade(id_tmdb, regiao)` | TMDB (watch providers) | leitura | n/a |
-| `registrar_recomendacao(usuario, id_tmdb, desfecho)` | banco próprio | escrita | sim, é idempotente |
-
-A `buscar_detalhes` traz sinopse, elenco, nota e gêneros. A `buscar_avaliacoes` traz os comentários de espectadores, que é justamente o texto onde o agente procura pistas sobre a atmosfera e o clima de um título, coisas que a sinopse não conta. A `buscar_similares` traz uma lista inicial de candidatos que o agente depois filtra pelo motivo real da preferência, em vez de aceitar a lista como ela vem. A `verificar_disponibilidade` diz em quais plataformas de streaming aquele título está incluso na assinatura naquela região, e é o que permite descartar um título que a pessoa não conseguiria assistir.
-
-**O estado.** Algumas coisas precisam sobreviver de um passo para o outro dentro da conversa. São elas o título de referência que a pessoa citou, o motivo da preferência assim que o agente consegue extraí-lo, a lista de títulos que já foram sugeridos ou recusados nessa mesma conversa, e a restrição de classificação indicativa, caso a sessão tenha alguma ativa.
-
-**O orçamento.** Cada rodada de busca pode fazer no máximo oito chamadas ao TMDB, o que dá para consultar detalhes e avaliações de até três candidatos mais a verificação de disponibilidade. A etapa de verificação da justificativa roda no máximo duas rodadas antes de desistir. A conversa inteira tem teto de seis trocas antes de o agente fechar uma sugestão ou admitir que não encontrou nada adequado. Cada rodada de busca tem vinte segundos de tempo limite, para o chat não travar esperando o TMDB responder.
-
-## 3. Processamento
-
-```
-1. ENTRADA        mensagem de texto livre + contexto salvo          [-]
-
-2. TRIAGEM        classifica em 3 rotas                       [ROUTER]
-                    pedido novo  -> segue para 3
-                    refinamento  -> segue para 4, com o motivo
-                    reação       -> registra desfecho, vai para 6
-
-3. INVESTIGAÇÃO   descobre o motivo do gosto; se a           [AGENTE,
-   DA PREFERÊNCIA   resposta for rasa, pergunta               2 trocas]
-
-4. BUSCA E        busca candidatos no TMDB e cruza o          [AGENTE,
-   FILTRAGEM        motivo com sinopse e avaliações;          8 chamadas]
-                    descarta os já vistos, os fora
-                    das assinaturas e os fora da
-                    classificação da sessão
-
-5. VERIFICAÇÃO    confere se o trecho citado realmente     [AVALIADOR,
-   DA EVIDÊNCIA     sustenta a recomendação                  2 rodadas]
-
-6. REGISTRO       grava a recomendação e o desfecho        [ESCRITA,
-                                                            idempotente]
-
-7. RETORNO        entrega de 2 a 3 sugestões, cada uma           [-]
-                    com a evidência e a plataforma
-```
-
-**O que entra e o que sai de cada etapa.**
-
-```
-2. TRIAGEM
-   entra: {"texto": "curti muito Severance, me indica algo parecido"}
-   sai:   {"rota": "pedido_novo", "titulo_referencia": "Severance"}
-
-3. INVESTIGAÇÃO DA PREFERÊNCIA
-   entra: {"titulo_referencia": "Severance", "motivo_dito": null}
-   sai:   {"motivo": "clima de mal-estar constante"}
-          ou, se a resposta foi rasa:
-          {"pergunta": "o que mais te prendeu, o mistério
-            corporativo ou o clima estranho?"}
-
-4. BUSCA E FILTRAGEM
-   entra: {"motivo": "clima de mal-estar constante",
-           "assinaturas": ["Netflix", "Prime Video"],
-           "ja_vistos": [...],
-           "classificacao_maxima": null}
-   sai:   {"candidatos": [
-            {"titulo": "Dark", "id_tmdb": 70523,
-             "plataforma": "Netflix",
-             "evidencia": "avaliações citam a sensação de
-               desconforto mais do que o mistério em si"},
-            {"titulo": "The Leftovers", "id_tmdb": 54344,
-             "plataforma": "Max",
-             "evidencia": "..."}
-          ]}
-
-5. VERIFICAÇÃO DA EVIDÊNCIA
-   entra: a lista de candidatos com a evidência de cada um
-   sai:   {"aprovados": [70523],
-           "rejeitados": [
-             {"id_tmdb": 54344,
-              "motivo": "a evidência fala do luto, não do
-                mal-estar que a pessoa citou"}]}
-          se nada passar em 2 rodadas:
-          {"aprovados": [], "aviso": "nenhum candidato com
-            evidência sólida no catálogo assinado"}
-
-6. REGISTRO
-   entra: {"usuario": "...", "id_tmdb": 70523,
-           "desfecho": "aceita"}
-   sai:   {"gravado": true}
-
-7. RETORNO
-   sai:   o texto que a pessoa lê, em até 3 linhas por sugestão
-```
-
-**O que o usuário efetivamente vê.** Uma mensagem curta de chat, com até três sugestões. Cada uma traz o motivo pelo qual foi escolhida, com o trecho de avaliação que embasa essa escolha, e em qual das plataformas que a pessoa assina aquele título está disponível. Um exemplo de como isso aparece na tela:
-
-> Pelo clima de estranhamento que você descreveu, a melhor aposta é **Dark**, que está na sua Netflix. As avaliações mais recorrentes falam justamente dessa sensação de que algo está errado o tempo todo, mais do que da trama de viagem no tempo em si.
-
-Quando nada do catálogo assinado combina de verdade com o motivo, o agente diz isso com todas as letras em vez de forçar uma sugestão fraca, e oferece ampliar o critério.
-
-## Justificativa dos padrões escolhidos
-
-**Triagem, Router.** Existem três tipos de mensagem chegando pelo mesmo canal, e eles seguem caminhos diferentes dentro do sistema. Uma reação como "já vi essa" só precisa ser registrada e não deveria disparar uma busca inteira no TMDB. O padrão mais simples, que seria mandar tudo direto para o agente, não resolve porque faria o sistema gastar chamadas de API e tempo de resposta reprocessando uma conversa que já estava resolvida.
-
-**Investigação da preferência e Busca e filtragem, Agente.** Descobrir por que alguém gostou de um título, e depois cruzar esse motivo com sinopses e comentários de vários candidatos, exige interpretar texto livre e decidir na hora quantos candidatos investigar e quando parar. Um fluxo fixo não resolve porque o número de candidatos que vale a pena examinar muda a cada caso, e porque às vezes é preciso fazer uma pergunta antes de conseguir buscar qualquer coisa.
-
-**Verificação da evidência, Avaliador.** O risco concreto aqui é o modelo recomendar um título e inventar, ou forçar, o trecho de avaliação que supostamente justifica a escolha. Como a promessa do produto é justamente explicar o porquê da sugestão, uma justificativa que não se sustenta quebra a única coisa que diferencia esse agente de um filtro por gênero. Uma segunda passada crítica, com duas rodadas no máximo, pega esse erro antes de ele chegar na tela.
-
-**Registro, escrita idempotente.** É a única escrita do sistema. Como o app não reproduz mídia, não aluga e não compra nada, nenhuma ação do agente gasta dinheiro ou produz efeito irreversível fora da conversa. Gravar duas vezes o mesmo desfecho não duplica nada, porque o registro é identificado pela combinação de usuário e título.
-
-**Onde parei na tabela de decisão.** Não há orquestrador nem subtarefas em paralelo neste fluxo, porque uma única linha de investigação por pedido já resolve o problema. Subir para orquestração seria dar autonomia sem nenhuma contrapartida.
-
-## 4. O agente de personalização
-
-O agente de recomendação decide bem dentro de uma conversa, mas esquece tudo quando ela acaba. O agente de personalização existe para fechar esse ciclo. Ele lê o histórico de recomendações e de desfechos que o primeiro agente vai gravando, e mantém para cada usuário um resumo curto do que essa pessoa costuma gostar e do que costuma recusar. Nas conversas seguintes, o agente de recomendação consulta esse resumo antes de buscar qualquer coisa, e é assim que o sistema vai ficando mais preciso com o uso.
-
-Os dois agentes não disputam o mesmo tempo de resposta. O de recomendação roda dentro da conversa, com a pessoa esperando. O de personalização roda em segundo plano, depois que a conversa já terminou, então ele pode demorar sem prejudicar ninguém.
-
-### Entrada
-
-O que chega até ele não é texto da pessoa, é dado que o próprio sistema produziu. São os registros gravados na etapa 6 do agente de recomendação, cada um contendo o título sugerido, o motivo que levou à sugestão e o desfecho, ou seja, se a pessoa aceitou, recusou ou avisou que já tinha visto.
-
-Quem dispara é o próprio sistema, de duas maneiras possíveis. Pode ser por evento, toda vez que um novo desfecho é gravado, ou por agenda, numa rotina que roda uma vez por dia e processa tudo que se acumulou. A entrada é completamente homogênea, sempre o mesmo formato de registro, então aqui não há nada para rotear e um router seria custo sem retorno.
-
-### System
-
-**O system prompt, em uma frase.** Este agente mantém um resumo curto do gosto de cada usuário a partir do histórico real de recomendações e desfechos, e não conversa com ninguém nem recomenda nada diretamente, apenas produz o material que o agente de recomendação consulta.
-
-**As ferramentas.** São três, duas de leitura e uma de escrita.
-
-| Ferramenta | Leitura ou escrita | Reversível |
-|---|---|---|
-| `ler_registros_novos(usuario, desde)` | leitura | n/a |
-| `ler_resumo_atual(usuario)` | leitura | n/a |
-| `gravar_resumo(usuario, texto)` | escrita | sim, a versão anterior fica em log |
-
-**O estado.** Duas coisas precisam sobreviver de uma execução para a outra. A primeira é o resumo atual do usuário, que serve de ponto de partida para a próxima reescrita. A segunda é a data do último registro já processado, que é o que diz de onde continuar na rodada seguinte.
-
-**O orçamento.** O resumo só é reescrito quando existem pelo menos três registros novos desde a última atualização, para o perfil não oscilar por causa de uma recusa isolada. O resumo tem teto de duzentas palavras, porque ele é um resumo e não um histórico. E cada usuário tem no máximo uma atualização por dia.
-
-### Processamento
-
-```
-1. GATILHO     novo registro gravado, ou rotina diária          [-]
-
-2. FILTRO      há pelo menos 3 registros novos?           [REGRA EM
-                 se não, para aqui                          CÓDIGO]
-
-3. SÍNTESE     lê o resumo atual e os registros    [ENCADEAMENTO,
-                 novos e escreve o resumo novo       1 chamada]
-
-4. GRAVAÇÃO    substitui o resumo salvo                  [ESCRITA,
-                                                       idempotente]
-```
-
-**O que entra e o que sai de cada etapa.**
-
-```
-2. FILTRO
-   entra: {"usuario": "...", "ultimo_processado": "2026-09-01"}
-   sai:   {"segue": true, "registros_novos": 4}
-          ou {"segue": false}
-
-3. SÍNTESE
-   entra: {"resumo_atual": "gosta de atmosfera pesada e de
-             personagens ambíguos",
-           "registros_novos": [
-             {"titulo": "Dark", "motivo": "clima de mal-estar",
-              "desfecho": "aceita"},
-             {"titulo": "Emily in Paris", "motivo": "leveza",
-              "desfecho": "recusada"}
-           ]}
-   sai:   {"resumo_novo": "gosta de atmosfera pesada, de
-             personagens ambíguos e de ritmo lento; recusa
-             comédias leves de forma consistente"}
-
-4. GRAVAÇÃO
-   entra: o resumo novo
-   sai:   {"gravado": true, "versao": 7}
-```
-
-### Como os dois agentes se conectam
-
-```mermaid
-flowchart LR
-    U[Usuário] -->|pede recomendação| AR[Agente de recomendação]
-    AR -->|consulta| TMDB[(TMDB)]
-    AR -->|lê o resumo de gosto| R[(Resumo de gosto)]
-    AR -->|grava título e desfecho| H[(Histórico)]
-    AR -->|sugestão com evidência| U
-    H -->|registros novos| AP[Agente de personalização]
-    R -->|resumo atual| AP
-    AP -->|resumo atualizado| R
-```
-
-### A mesma coisa ao longo de duas sessões
-
-```mermaid
-sequenceDiagram
-    participant U as Usuário
-    participant AR as Agente de recomendação
-    participant T as TMDB
-    participant H as Histórico
-    participant AP as Agente de personalização
-    participant R as Resumo de gosto
-
-    U->>AR: gostei de Severance, indica algo parecido
-    AR->>R: consulta o resumo de gosto
-    AR->>U: o que te prendeu, o mistério ou o clima?
-    U->>AR: o clima estranho
-    AR->>T: busca candidatos, detalhes e avaliações
-    AR->>T: verifica disponibilidade nas assinaturas
-    AR->>U: sugere Dark, com a evidência e a plataforma
-    U->>AR: vou ver essa
-    AR->>H: grava o título e o desfecho
-
-    Note over H,AP: em segundo plano, fora da conversa
-    H->>AP: registros novos disponíveis
-    AP->>R: lê o resumo atual
-    AP->>R: grava o resumo atualizado
-
-    Note over R: a próxima sessão já parte do resumo novo
-    U->>AR: e agora, o que eu vejo?
-    AR->>R: consulta o resumo, já atualizado
-```
-
-### Por dentro do agente de personalização
-
-```mermaid
-flowchart TD
-    A[Gatilho: registro novo ou rotina diária] --> B{Há 3 ou mais registros novos?}
-    B -- não --> Z[Espera o próximo gatilho]
-    B -- sim --> C[Lê o resumo atual e os registros novos]
-    C --> D[Escreve o resumo atualizado em uma única chamada]
-    D --> E[Grava, substituindo a versão anterior]
-    E --> Z
-```
-
-### Justificativa dos padrões escolhidos
-
-**Síntese, encadeamento simples em vez de agente.** A entrada e a saída dessa etapa são conhecidas de antemão. Entram o resumo atual e um lote pequeno de registros novos, sai um resumo atualizado. O modelo não precisa decidir qual ferramenta chamar nem quando parar, porque os dois dados já chegam prontos no prompt. Usar o padrão agente aqui seria exatamente o erro que a tabela de decisão manda evitar, que é escolher um padrão onde nenhum era necessário.
-
-**Filtro de volume, regra em código.** Uma única recusa não deveria reescrever o gosto inteiro de alguém. O mínimo de três registros novos evita que o resumo mude de opinião a cada clique e acabe produzindo recomendações contraditórias de uma sessão para a outra. É uma condição simples, resolvida com um `if`, sem nenhuma chamada de modelo.
-
-**Gravação, escrita idempotente.** Cada atualização substitui o resumo anterior por inteiro em vez de editá-lo aos poucos, então rodar a rotina duas vezes com o mesmo lote de registros produz exatamente o mesmo resultado. A versão antiga fica salva em log, o que torna a mudança reversível caso o resumo piore.
-
-### O que muda no agente de recomendação
-
-Com o agente de personalização no sistema, a etapa 4 passa a receber um dado a mais, que é o resumo de gosto acumulado, além do motivo que a pessoa acabou de dar na conversa atual.
-
-```
-4. BUSCA E FILTRAGEM
-   entra: {"motivo": "clima de mal-estar constante",
-           "resumo_de_gosto": "gosta de atmosfera pesada, de
-             personagens ambíguos e de ritmo lento; recusa
-             comédias leves de forma consistente",
-           "assinaturas": ["Netflix", "Prime Video"],
-           "ja_vistos": [...],
-           "classificacao_maxima": null}
-   sai:   a mesma lista de candidatos de antes, agora ordenada
-          também pelo que o resumo de gosto indica
-```
-
-O motivo da conversa atual continua tendo prioridade sobre o resumo acumulado. Se a pessoa hoje quer algo leve, ela recebe algo leve, mesmo que o resumo diga que ela costuma recusar comédias. O resumo serve para desempatar entre candidatos parecidos, não para sobrepor o que ela está pedindo agora.
+| `CatalogoDB.obter_titulo` | leitura estruturada | n/a | resolve referência; falha vira `registro_inexistente` |
+| `CatalogoDB.buscar_por_clima` | leitura estruturada | n/a | aplica assinatura, classificação, histórico e referência excluída |
+| `buscar_evidencias` | leitura textual do corpus | n/a | recupera reviews ativos com ID e fonte; revogados são descartados |
+| `CatalogoDB.buscar_episodios` | leitura de memória episódica FTS5 | n/a | encontra até 3 eventos anteriores do mesmo usuário; não os trata como gosto |
+| `CatalogoDB.registrar_idempotente` | escrita SQLite | idempotente; reversão administrativa por registro | cria histórico, episódio e opt-in semântico na mesma transação |
+| `CatalogoDB.atualizar_preferencia` | escrita chave-valor | sobrescrita pela versão mais recente | só após opt-in humano `remember_preference=true` |
+
+Não há laço livre de ferramentas: no máximo uma inferência de interpretação, uma
+recuperação e uma pausa. O workflow avança porque cada aresta envia o estado ao
+próximo nó. Não há paralelismo, votação ou chamada repetida de avaliador. O
+modelo não escolhe ferramenta nem pode relaxar filtros.
+
+## Estado e mensagens
+
+O estado tipado `AgentState` está em `src/graph.py`. `messages` usa o reducer
+`add_messages`; `trajectory` e `evidence` usam acumulação de lista. Os campos
+escalares são atualizados pelo nó responsável, não compartilhados por ramos
+paralelos.
+
+| Campo | Tipo | Quem escreve | Quem lê | Origem |
+|---|---|---|---|---|
+| `message` | `str` | entrada | triage, retrieve | texto da pessoa |
+| `messages` | lista de mensagens + `add_messages` | invocação | checkpoint/depuração | mensagem textual; não é o estado inteiro |
+| `user_id`, `session_id`, `subscriptions`, `max_rating`, `region` | escalares | app chamador | triage, retrieve, approval, persist | metadados autenticados devem vir do app real; fixture no CLI |
+| `reference_title`, `reference_error`, `mood`, `route` | escalares | triage | retrieve/propose/arestas | texto + interpretação validada; erro do lookup é preservado |
+| `candidates`, `candidate_titles` | listas substituídas | retrieve | propose/approval | consulta estruturada |
+| `evidence` | lista + reducer aditivo | retrieve | checkpoint/auditoria | histórico de trechos recuperados da thread |
+| `current_evidence` | lista substituída | retrieve | propose/persist | só os trechos da mensagem corrente; impede evidência antiga de sustentar nova proposta |
+| `decision` | objeto Pydantic serializado | triage, propose, approval, persist | consumidor | contrato de saída |
+| `pending_action`, `human_response` | objetos | propose, approval | approval, persist | payload visível e resposta humana |
+| `idempotency_key`, `persist_result` | escalares/objeto | approval, persist | persist/consumidor | SHA-256 e retorno `ja_existia` |
+| `trajectory` | lista + reducer aditivo | cada nó | logs/diagnóstico | eventos da execução |
+| `retrieval_calls`, `model_calls`, `model_tokens` | contadores | retrieve/triage | orçamento/log | chamadas efetivamente feitas |
+| `memory_hits`, `semantic_memory` | lista/objeto | retrieve | contexto/auditoria | tabelas SQLite do usuário |
+| `started_at`, `prompt_manifest`, `decision_source`, `model_name`, `temperature` | auditoria | triage | limite/log | relógio, hash SHA-256 do prompt e combinação de modelo/parâmetro |
+
+### O que não está no estado
+
+- A conversa em texto fica em `messages`; decisão, limites, identidade, evidência,
+  chamada de recuperação e aprovação ficam em campos próprios.
+- O catálogo completo, o banco e os bytes do corpus não são copiados para o
+  checkpoint. IDs e trechos usados são recalculáveis a partir das fontes.
+- O resultado do modelo não inclui raciocínio privado; só o objeto validado.
+- Não há agentes filhos; se a Parte 3 os introduzir, devem receber um DTO menor,
+  não todo o `AgentState`.
+
+### Reducers: teste observado
+
+O teste `test_reducer_combines_parallel_updates_and_missing_reducer_errors`
+executa dois nós paralelos. Com `operator.add`, ambos os valores aparecem. No
+controle sem reducer, LangGraph 0.6.10 levanta `InvalidUpdateError` para duas
+atualizações no mesmo passo (não sobrescreve silenciosamente). Por isso o
+sistema usa reducers nas listas acumuladas, embora seu próprio fluxo não seja
+paralelo; os demais campos têm um único escritor por etapa.
+
+## Orçamento, término e falhas
+
+- **Passos:** `recursion_limit=12`, declarado explicitamente na invocação; a
+  topologia normal visita até cinco nós.
+- **Tempo:** 20 s para timeout da chamada OpenAI; antes da recuperação o grafo
+  confere o tempo total decorrido. O limite não cancela uma operação SQLite
+  travada; este protótipo local não tem deadline de processo rígido.
+- **Tokens:** uma chamada de interpretação, `max_tokens=300` de saída; o total
+  de tokens da entrada não é limitado por esse parâmetro e aparece separado
+  quando o provedor o informa.
+- **Recuperação:** 1 consulta lexical quando há clima buscável e elegibilidade;
+  0 se a triagem pergunta/recusa ou a referência ausente não vem acompanhada de
+  clima explícito. Um erro de referência com clima informado ainda pode seguir.
+- **Candidatos/evidências:** até 12 trechos recuperados.
+
+Términos de negócio: `recommendation`, `no_match`, `clarification`,
+`out_of_scope`, `rejected`, proposta pendente (`awaiting_human`). Términos
+operacionais: limite de tempo, limite de recursão, falha/JSON inválido do modelo
+(sem fallback silencioso) e exceção de banco. Exceção de banco é fatal e sobe
+para o chamador; não é convertida em recusa de domínio.
+
+## Nível de autonomia escolhido
+
+O nível é **workflow com router e uma chamada de interpretação**, não agente
+com laço livre. Um workflow puramente fixo não bastava para texto livre novo,
+conflito entre referência e preferência e distinção entre pedido de
+recomendação e fora de escopo; o modelo tipado ajuda no nó `triage`. Não demos
+mais autonomia que isso: SQL verifica elegibilidade, RAG fornece evidência, o
+código decide o destino das arestas e uma pessoa confirma a escrita. Sem chave,
+o parser local executa uma fatia reproduzível, e não é tratado como desempenho
+do LLM.
+
+## Padrões da Aula 05
+
+| Padrão | Onde | Por que ele, e não o degrau abaixo | Condição de não uso |
+|---|---|---|---|
+| sequencial com portão | `retrieve -> propose -> approval -> persist` | valida elegibilidade e interrompe antes de efeito persistente | quando não há escrita ou a proposta não precisa de consentimento |
+| router | arestas condicionais de `triage`, `propose`, `approval` | mensagens, evidência e decisão humana levam a destinos diferentes | entrada homogênea e sem ramo de recusa/pausa |
+| paralelização / sectioning / voting | não usado | apenas um corpus pequeno e uma decisão; fan-out adicionaria custo | avaliações grandes e verificadores independentes necessários |
+| orquestrador-trabalhador | não usado | uma única recomendação não justifica decomposição de agentes | muitas subtarefas independentes |
+| avaliador-otimizador | não usado | citação literal e filtros de código; sem reescrita iterativa | quando a qualidade textual precisa de ciclos mensuráveis |
+| agente em laço | não usado | custo/autonomia desnecessários; chamada única basta | quando resultados intermediários exigem escolher ferramentas dinamicamente |
+
+## Decisões antes escondidas por padrões
+
+- `max_tokens=300`, `temperature=0.2`, timeout de 20 s, limite de recursão 12,
+  limite de evidências 12 e prazo HITL de 24 h estão declarados no projeto.
+- O reducer de mensagens é `add_messages`; evidências e trajetória concatenam.
+- Se o padrão de LangGraph mudar, a topologia/recursão ou reducer poderiam
+  mudar sem diffs locais; por isso os valores estão explícitos e fixados em
+  `requirements.txt`.

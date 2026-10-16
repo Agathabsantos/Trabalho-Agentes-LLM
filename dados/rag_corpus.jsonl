@@ -1,0 +1,19 @@
+{"id":"dark-review-1","title":"Dark","text":"O clima de inquietacao e o que chama atencao.","source":"dados/streaming_catalog.json:Dark.reviews[0]","status":"active","kind":"review"}
+{"id":"dark-review-2","title":"Dark","text":"Sentimento de que algo esta errado o tempo todo.","source":"dados/streaming_catalog.json:Dark.reviews[1]","status":"active","kind":"review"}
+{"id":"oa-review-1","title":"The OA","text":"A atmosfera estranha e cativante.","source":"dados/streaming_catalog.json:The OA.reviews[0]","status":"active","kind":"review"}
+{"id":"oa-review-2","title":"The OA","text":"O misterio e a sensacao de desconforto se sobrepoem.","source":"dados/streaming_catalog.json:The OA.reviews[1]","status":"active","kind":"review"}
+{"id":"office-review-1","title":"The Office","text":"Bem leve e engracada.","source":"dados/streaming_catalog.json:The Office.reviews[0]","status":"active","kind":"review"}
+{"id":"office-review-2","title":"The Office","text":"O humor e mais cotidiano do que intenso.","source":"dados/streaming_catalog.json:The Office.reviews[1]","status":"active","kind":"review"}
+{"id":"severance-review-1","title":"Severance","text":"A sensacao de mal estar e constante.","source":"dados/streaming_catalog.json:Severance.reviews[0]","status":"active","kind":"review"}
+{"id":"severance-review-2","title":"Severance","text":"O clima inquietante e melhor que a trama.","source":"dados/streaming_catalog.json:Severance.reviews[1]","status":"active","kind":"review"}
+{"id":"leftovers-review-1","title":"The Leftovers","text":"A serie e emocionalmente densa.","source":"dados/streaming_catalog.json:The Leftovers.reviews[0]","status":"active","kind":"review"}
+{"id":"leftovers-review-2","title":"The Leftovers","text":"A atmosfera de luto e mais forte do que o misterio.","source":"dados/streaming_catalog.json:The Leftovers.reviews[1]","status":"active","kind":"review"}
+{"id":"servant-review-1","title":"Servant","text":"A ansiedade e o desconforto sao constantes.","source":"dados/streaming_catalog.json:Servant.reviews[0]","status":"active","kind":"review"}
+{"id":"servant-review-2","title":"Servant","text":"Muito tenso e estranho.","source":"dados/streaming_catalog.json:Servant.reviews[1]","status":"active","kind":"review"}
+{"id":"queen-review-1","title":"The Queen's Gambit","text":"Muito inspiradora e focada.","source":"dados/streaming_catalog.json:The Queen's Gambit.reviews[0]","status":"active","kind":"review"}
+{"id":"queen-review-2","title":"The Queen's Gambit","text":"O talento e a disciplina sao o centro.","source":"dados/streaming_catalog.json:The Queen's Gambit.reviews[1]","status":"active","kind":"review"}
+{"id":"murders-review-1","title":"Only Murders in the Building","text":"Engracada sem perder o misterio.","source":"dados/streaming_catalog.json:Only Murders in the Building.reviews[0]","status":"active","kind":"review"}
+{"id":"murders-review-2","title":"Only Murders in the Building","text":"O clima e leve, mas curioso.","source":"dados/streaming_catalog.json:Only Murders in the Building.reviews[1]","status":"active","kind":"review"}
+{"id":"bear-review-1","title":"The Bear","text":"Caotico e intenso.","source":"dados/streaming_catalog.json:The Bear.reviews[0]","status":"active","kind":"review"}
+{"id":"bear-review-2","title":"The Bear","text":"Muito frenético.","source":"dados/streaming_catalog.json:The Bear.reviews[1]","status":"active","kind":"review"}
+{"id":"dark-review-obsolete","title":"Dark","text":"Dark e uma comedia leve e cotidiana, sem mal estar.","source":"fixture obsoleto criado para avaliacao de curadoria","status":"revoked","replaced_by":"dark-review-2","kind":"review"}

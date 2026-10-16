@@ -1,0 +1,774 @@
+[
+  {
+    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
+    "working_tree_dirty": true,
+    "case_id": "01_caminho_feliz",
+    "started_at": "2026-10-16T23:47:26.613392+00:00",
+    "request": {
+      "message": "Curti Severance pelo mal-estar constante. Indica algo parecido.",
+      "user_id": "demo-p2-01",
+      "subscriptions": [
+        "Netflix"
+      ],
+      "max_rating": "16+",
+      "region": "BR",
+      "session_id": "01_caminho_feliz",
+      "case_id": "01_caminho_feliz"
+    },
+    "execution": {
+      "engine": "regras_locais",
+      "model": false,
+      "model_name": null,
+      "temperature": "0.2",
+      "model_calls": 0,
+      "model_output_tokens": 0,
+      "max_output_tokens": 300,
+      "timeout_seconds": 20,
+      "recursion_limit": 12,
+      "prompt_sha256": {
+        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+      },
+      "retrieval_calls": 1,
+      "thread_id": "01_caminho_feliz"
+    },
+    "paused_action": {
+      "action": "registrar_recomendacao_no_historico",
+      "title": "Dark",
+      "platform": "Netflix",
+      "reason": "A avaliacao cita: ‘Sentimento de que algo esta errado o tempo todo.’",
+      "consequence": "O titulo passara a constar como recomendado no historico deste usuario.",
+      "optional_memory": "A preferencia so sera guardada como memoria semantica se o responsavel marcar remember_preference=true.",
+      "account_owner": "demo-p2-01",
+      "created_at": 1792194446.6246183,
+      "deadline_seconds": 86400,
+      "evidence_id": "dark-review-2"
+    },
+    "human_response": {
+      "decision": "approve"
+    },
+    "write_attempts": [
+      {
+        "gravado": true,
+        "ja_existia": false,
+        "id": 4,
+        "chave_idempotencia": "c2f6691cea350f2de51f2994d3b04e02ac135c9917c1b18db909bb50273b038b"
+      }
+    ],
+    "decision": {
+      "status": "recommendation",
+      "title": "Dark",
+      "reason": "A avaliacao cita: ‘Sentimento de que algo esta errado o tempo todo.’",
+      "platform": "Netflix",
+      "confidence": "medium",
+      "missing_info": "nenhuma",
+      "next_step": "aguardar a reacao do usuario",
+      "sufficient": true,
+      "sources": [
+        {
+          "id": "dark-review-2",
+          "title": "Dark",
+          "text": "Sentimento de que algo esta errado o tempo todo.",
+          "source": "dados/streaming_catalog.json:Dark.reviews[1]",
+          "score": 1
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "node": "triage",
+        "at": 1792194446.6212378,
+        "route": "retrieve",
+        "mood": "mal_estar",
+        "reference": "Severance",
+        "lookup_error": null,
+        "unknown_reference": null
+      },
+      {
+        "node": "retrieve",
+        "at": 1792194446.6241615,
+        "eligible": 1,
+        "returned": 1,
+        "retrieval_calls": 1
+      },
+      {
+        "node": "propose",
+        "at": 1792194446.6246266,
+        "title": "Dark",
+        "source": "dark-review-2"
+      },
+      {
+        "node": "approval",
+        "at": 1792194446.6324463,
+        "outcome": "approved",
+        "edited": false
+      },
+      {
+        "node": "persist",
+        "at": 1792194446.6347952,
+        "gravado": true,
+        "ja_existia": false,
+        "id": 4,
+        "chave_idempotencia": "c2f6691cea350f2de51f2994d3b04e02ac135c9917c1b18db909bb50273b038b"
+      }
+    ],
+    "finished_at": "2026-10-16T23:47:26.636336+00:00"
+  },
+  {
+    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
+    "working_tree_dirty": true,
+    "case_id": "02_divergencia",
+    "started_at": "2026-10-16T23:47:26.636354+00:00",
+    "request": {
+      "message": "Quero algo leve e sem ficar pensando demais. Me lembra Severance?",
+      "user_id": "demo-p2-02",
+      "subscriptions": [
+        "Netflix",
+        "Prime Video"
+      ],
+      "max_rating": "14+",
+      "region": "BR",
+      "session_id": "02_divergencia",
+      "case_id": "02_divergencia"
+    },
+    "execution": {
+      "engine": "regras_locais",
+      "model": false,
+      "model_name": null,
+      "temperature": "0.2",
+      "model_calls": 0,
+      "model_output_tokens": 0,
+      "max_output_tokens": 300,
+      "timeout_seconds": 20,
+      "recursion_limit": 12,
+      "prompt_sha256": {
+        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+      },
+      "retrieval_calls": 1,
+      "thread_id": "02_divergencia"
+    },
+    "paused_action": {
+      "action": "registrar_recomendacao_no_historico",
+      "title": "The Office",
+      "platform": "Netflix",
+      "reason": "A avaliacao cita: ‘Bem leve e engracada.’",
+      "consequence": "O titulo passara a constar como recomendado no historico deste usuario.",
+      "optional_memory": "A preferencia so sera guardada como memoria semantica se o responsavel marcar remember_preference=true.",
+      "account_owner": "demo-p2-02",
+      "created_at": 1792194446.641265,
+      "deadline_seconds": 86400,
+      "evidence_id": "office-review-1"
+    },
+    "human_response": {
+      "decision": "approve"
+    },
+    "write_attempts": [
+      {
+        "gravado": true,
+        "ja_existia": false,
+        "id": 5,
+        "chave_idempotencia": "b7729665eaf6b8c1c76fb09247e648553be416275615687821be12715e224941"
+      }
+    ],
+    "decision": {
+      "status": "recommendation",
+      "title": "The Office",
+      "reason": "A avaliacao cita: ‘Bem leve e engracada.’",
+      "platform": "Netflix",
+      "confidence": "high",
+      "missing_info": "nenhuma",
+      "next_step": "aguardar a reacao do usuario",
+      "sufficient": true,
+      "sources": [
+        {
+          "id": "office-review-1",
+          "title": "The Office",
+          "text": "Bem leve e engracada.",
+          "source": "dados/streaming_catalog.json:The Office.reviews[0]",
+          "score": 2
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "node": "triage",
+        "at": 1792194446.638768,
+        "route": "retrieve",
+        "mood": "leve",
+        "reference": "Severance",
+        "lookup_error": null,
+        "unknown_reference": null
+      },
+      {
+        "node": "retrieve",
+        "at": 1792194446.6405704,
+        "eligible": 1,
+        "returned": 1,
+        "retrieval_calls": 1
+      },
+      {
+        "node": "propose",
+        "at": 1792194446.6412735,
+        "title": "The Office",
+        "source": "office-review-1"
+      },
+      {
+        "node": "approval",
+        "at": 1792194446.6484885,
+        "outcome": "approved",
+        "edited": false
+      },
+      {
+        "node": "persist",
+        "at": 1792194446.6499503,
+        "gravado": true,
+        "ja_existia": false,
+        "id": 5,
+        "chave_idempotencia": "b7729665eaf6b8c1c76fb09247e648553be416275615687821be12715e224941"
+      }
+    ],
+    "finished_at": "2026-10-16T23:47:26.651568+00:00"
+  },
+  {
+    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
+    "working_tree_dirty": true,
+    "case_id": "03_registro_inexistente",
+    "started_at": "2026-10-16T23:47:26.651587+00:00",
+    "request": {
+      "message": "Amei O Enigma de Kessler, quero misterio e estranheza. Me recomenda algo.",
+      "user_id": "demo-p2-03",
+      "subscriptions": [
+        "Netflix"
+      ],
+      "max_rating": "16+",
+      "region": "BR",
+      "session_id": "03_registro_inexistente",
+      "case_id": "03_registro_inexistente"
+    },
+    "execution": {
+      "engine": "regras_locais",
+      "model": false,
+      "model_name": null,
+      "temperature": "0.2",
+      "model_calls": 0,
+      "model_output_tokens": 0,
+      "max_output_tokens": 300,
+      "timeout_seconds": 20,
+      "recursion_limit": 12,
+      "prompt_sha256": {
+        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+      },
+      "retrieval_calls": 1,
+      "thread_id": "03_registro_inexistente"
+    },
+    "paused_action": {
+      "action": "registrar_recomendacao_no_historico",
+      "title": "The OA",
+      "platform": "Netflix",
+      "reason": "A avaliacao cita: ‘O misterio e a sensacao de desconforto se sobrepoem.’",
+      "consequence": "O titulo passara a constar como recomendado no historico deste usuario.",
+      "optional_memory": "A preferencia so sera guardada como memoria semantica se o responsavel marcar remember_preference=true.",
+      "account_owner": "demo-p2-03",
+      "created_at": 1792194446.656867,
+      "deadline_seconds": 86400,
+      "evidence_id": "oa-review-2"
+    },
+    "human_response": {
+      "decision": "approve"
+    },
+    "write_attempts": [
+      {
+        "gravado": true,
+        "ja_existia": false,
+        "id": 6,
+        "chave_idempotencia": "875cb1a2d3639e75f87a40293f03f696823b68e1c3540c5d46bebf7f6d5f85eb"
+      }
+    ],
+    "decision": {
+      "status": "recommendation",
+      "title": "The OA",
+      "reason": "A avaliacao cita: ‘O misterio e a sensacao de desconforto se sobrepoem.’",
+      "platform": "Netflix",
+      "confidence": "high",
+      "missing_info": "nenhuma",
+      "next_step": "aguardar a reacao do usuario",
+      "sufficient": true,
+      "sources": [
+        {
+          "id": "oa-review-2",
+          "title": "The OA",
+          "text": "O misterio e a sensacao de desconforto se sobrepoem.",
+          "source": "dados/streaming_catalog.json:The OA.reviews[1]",
+          "score": 4
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "node": "triage",
+        "at": 1792194446.6548083,
+        "route": "retrieve",
+        "mood": "misterio",
+        "reference": null,
+        "lookup_error": "registro_inexistente",
+        "unknown_reference": "O Enigma de Kessler"
+      },
+      {
+        "node": "retrieve",
+        "at": 1792194446.6564367,
+        "eligible": 2,
+        "returned": 2,
+        "retrieval_calls": 1
+      },
+      {
+        "node": "propose",
+        "at": 1792194446.6568758,
+        "title": "The OA",
+        "source": "oa-review-2"
+      },
+      {
+        "node": "approval",
+        "at": 1792194446.660568,
+        "outcome": "approved",
+        "edited": false
+      },
+      {
+        "node": "persist",
+        "at": 1792194446.66482,
+        "gravado": true,
+        "ja_existia": false,
+        "id": 6,
+        "chave_idempotencia": "875cb1a2d3639e75f87a40293f03f696823b68e1c3540c5d46bebf7f6d5f85eb"
+      }
+    ],
+    "finished_at": "2026-10-16T23:47:26.666748+00:00"
+  },
+  {
+    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
+    "working_tree_dirty": true,
+    "case_id": "04_nao_dispara_acao",
+    "started_at": "2026-10-16T23:47:26.666767+00:00",
+    "request": {
+      "message": "Quero algo intenso e estranho, tipo Severance.",
+      "user_id": "demo-p2-04",
+      "subscriptions": [
+        "Prime Video"
+      ],
+      "max_rating": "10+",
+      "region": "BR",
+      "session_id": "04_nao_dispara_acao",
+      "case_id": "04_nao_dispara_acao"
+    },
+    "execution": {
+      "engine": "regras_locais",
+      "model": false,
+      "model_name": null,
+      "temperature": "0.2",
+      "model_calls": 0,
+      "model_output_tokens": 0,
+      "max_output_tokens": 300,
+      "timeout_seconds": 20,
+      "recursion_limit": 12,
+      "prompt_sha256": {
+        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+      },
+      "retrieval_calls": 1,
+      "thread_id": "04_nao_dispara_acao"
+    },
+    "paused_action": null,
+    "human_response": null,
+    "write_attempts": [],
+    "decision": {
+      "status": "no_match",
+      "title": null,
+      "reason": "Nao encontrei evidencia ativa no corpus para um titulo compativel com assinatura, classificacao e historico.",
+      "platform": null,
+      "confidence": "low",
+      "missing_info": "um clima com evidencia no corpus ou outra assinatura",
+      "next_step": "pedir refinamento; nao relaxar filtros",
+      "sufficient": false,
+      "sources": []
+    },
+    "trajectory": [
+      {
+        "node": "triage",
+        "at": 1792194446.669075,
+        "route": "retrieve",
+        "mood": "surreal",
+        "reference": "Severance",
+        "lookup_error": null,
+        "unknown_reference": null
+      },
+      {
+        "node": "retrieve",
+        "at": 1792194446.6706877,
+        "eligible": 0,
+        "returned": 0,
+        "retrieval_calls": 1
+      },
+      {
+        "node": "propose",
+        "at": 1792194446.6711388,
+        "result": "no_match"
+      }
+    ],
+    "finished_at": "2026-10-16T23:47:26.674005+00:00"
+  },
+  {
+    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
+    "working_tree_dirty": true,
+    "case_id": "05_fora_do_corpus",
+    "started_at": "2026-10-16T23:47:26.674022+00:00",
+    "request": {
+      "message": "Recomenda um filme de viagem submarina.",
+      "user_id": "demo-p2-05",
+      "subscriptions": [
+        "Netflix"
+      ],
+      "max_rating": "16+",
+      "region": "BR",
+      "session_id": "05_fora_do_corpus",
+      "case_id": "05_fora_do_corpus"
+    },
+    "execution": {
+      "engine": "regras_locais",
+      "model": false,
+      "model_name": null,
+      "temperature": "0.2",
+      "model_calls": 0,
+      "model_output_tokens": 0,
+      "max_output_tokens": 300,
+      "timeout_seconds": 20,
+      "recursion_limit": 12,
+      "prompt_sha256": {
+        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+      },
+      "retrieval_calls": 0,
+      "thread_id": "05_fora_do_corpus"
+    },
+    "paused_action": null,
+    "human_response": null,
+    "write_attempts": [],
+    "decision": {
+      "status": "no_match",
+      "title": null,
+      "reason": "O corpus curado nao contem evidencia suficiente sobre esse assunto; nao vou inventar uma recomendacao.",
+      "platform": null,
+      "confidence": "low",
+      "missing_info": "uma evidencia de catalogo sobre o assunto solicitado",
+      "next_step": "refinar para um clima coberto ou atualizar o corpus",
+      "sufficient": false,
+      "sources": []
+    },
+    "trajectory": [
+      {
+        "node": "triage",
+        "at": 1792194446.6768115,
+        "route": "finish",
+        "mood": null,
+        "reference": null,
+        "lookup_error": null,
+        "unknown_reference": null
+      }
+    ],
+    "finished_at": "2026-10-16T23:47:26.681005+00:00"
+  },
+  {
+    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
+    "working_tree_dirty": true,
+    "case_id": "06_pausa_edicao_idempotencia",
+    "started_at": "2026-10-16T23:47:26.681025+00:00",
+    "request": {
+      "message": "Quero algo leve e cotidiano, para rir. Recomenda um titulo.",
+      "user_id": "demo-p2-06",
+      "subscriptions": [
+        "Netflix"
+      ],
+      "max_rating": "16+",
+      "region": "BR",
+      "session_id": "06_pausa_edicao_idempotencia",
+      "case_id": "06_pausa_edicao_idempotencia"
+    },
+    "execution": {
+      "engine": "regras_locais",
+      "model": false,
+      "model_name": null,
+      "temperature": "0.2",
+      "model_calls": 0,
+      "model_output_tokens": 0,
+      "max_output_tokens": 300,
+      "timeout_seconds": 20,
+      "recursion_limit": 12,
+      "prompt_sha256": {
+        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+      },
+      "retrieval_calls": 1,
+      "thread_id": "06_pausa_edicao_idempotencia"
+    },
+    "paused_action": {
+      "action": "registrar_recomendacao_no_historico",
+      "title": "The Office",
+      "platform": "Netflix",
+      "reason": "A avaliacao cita: ‘Bem leve e engracada.’",
+      "consequence": "O titulo passara a constar como recomendado no historico deste usuario.",
+      "optional_memory": "A preferencia so sera guardada como memoria semantica se o responsavel marcar remember_preference=true.",
+      "account_owner": "demo-p2-06",
+      "created_at": 1792194446.6861253,
+      "deadline_seconds": 86400,
+      "evidence_id": "office-review-1"
+    },
+    "human_response": {
+      "decision": "approve",
+      "reason": "Edicao humana: o trecho descreve leveza e humor cotidiano.",
+      "remember_preference": true
+    },
+    "write_attempts": [
+      {
+        "gravado": true,
+        "ja_existia": false,
+        "id": 7,
+        "chave_idempotencia": "d1f86e007ca115b50f9f853e2bc615c9b763ff3d254830cb3780010918b72cea"
+      },
+      {
+        "gravado": false,
+        "ja_existia": true,
+        "id": 7,
+        "chave_idempotencia": "d1f86e007ca115b50f9f853e2bc615c9b763ff3d254830cb3780010918b72cea"
+      }
+    ],
+    "decision": {
+      "status": "recommendation",
+      "title": "The Office",
+      "reason": "Edicao humana: o trecho descreve leveza e humor cotidiano.",
+      "platform": "Netflix",
+      "confidence": "high",
+      "missing_info": "nenhuma",
+      "next_step": "aguardar a reacao do usuario",
+      "sufficient": true,
+      "sources": [
+        {
+          "id": "office-review-1",
+          "title": "The Office",
+          "text": "Bem leve e engracada.",
+          "source": "dados/streaming_catalog.json:The Office.reviews[0]",
+          "score": 2
+        }
+      ]
+    },
+    "trajectory": [
+      {
+        "node": "triage",
+        "at": 1792194446.6837664,
+        "route": "retrieve",
+        "mood": "leve",
+        "reference": null,
+        "lookup_error": null,
+        "unknown_reference": null
+      },
+      {
+        "node": "retrieve",
+        "at": 1792194446.6857073,
+        "eligible": 1,
+        "returned": 1,
+        "retrieval_calls": 1
+      },
+      {
+        "node": "propose",
+        "at": 1792194446.6861343,
+        "title": "The Office",
+        "source": "office-review-1"
+      },
+      {
+        "node": "approval",
+        "at": 1792194446.6907,
+        "outcome": "approved",
+        "edited": true
+      },
+      {
+        "node": "persist",
+        "at": 1792194446.6920657,
+        "gravado": true,
+        "ja_existia": false,
+        "id": 7,
+        "chave_idempotencia": "d1f86e007ca115b50f9f853e2bc615c9b763ff3d254830cb3780010918b72cea"
+      }
+    ],
+    "finished_at": "2026-10-16T23:47:26.693219+00:00"
+  },
+  {
+    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
+    "working_tree_dirty": true,
+    "case_id": "07_entrada_incompleta",
+    "started_at": "2026-10-16T23:47:26.693291+00:00",
+    "request": {
+      "message": "Me indica algo parecido.",
+      "user_id": "demo-p2-07",
+      "subscriptions": [
+        "Netflix"
+      ],
+      "max_rating": "16+",
+      "region": "BR",
+      "session_id": "07_entrada_incompleta",
+      "case_id": "07_entrada_incompleta"
+    },
+    "execution": {
+      "engine": "regras_locais",
+      "model": false,
+      "model_name": null,
+      "temperature": "0.2",
+      "model_calls": 0,
+      "model_output_tokens": 0,
+      "max_output_tokens": 300,
+      "timeout_seconds": 20,
+      "recursion_limit": 12,
+      "prompt_sha256": {
+        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+      },
+      "retrieval_calls": 0,
+      "thread_id": "07_entrada_incompleta"
+    },
+    "paused_action": null,
+    "human_response": null,
+    "write_attempts": [],
+    "decision": {
+      "status": "clarification",
+      "title": null,
+      "reason": "Ainda nao sei qual clima voce quer; diga o que gostou ou o que quer sentir.",
+      "platform": null,
+      "confidence": "low",
+      "missing_info": "o motivo do gosto ou clima desejado",
+      "next_step": "perguntar ao usuario",
+      "sufficient": false,
+      "sources": []
+    },
+    "trajectory": [
+      {
+        "node": "triage",
+        "at": 1792194446.6982927,
+        "route": "finish",
+        "mood": null,
+        "reference": null,
+        "lookup_error": null,
+        "unknown_reference": null
+      }
+    ],
+    "finished_at": "2026-10-16T23:47:26.700987+00:00"
+  },
+  {
+    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
+    "working_tree_dirty": true,
+    "case_id": "08_entrada_ambigua",
+    "started_at": "2026-10-16T23:47:26.701076+00:00",
+    "request": {
+      "message": "Me recomenda algo leve ou intenso? Ainda nao sei.",
+      "user_id": "demo-p2-08",
+      "subscriptions": [
+        "Netflix"
+      ],
+      "max_rating": "16+",
+      "region": "BR",
+      "session_id": "08_entrada_ambigua",
+      "case_id": "08_entrada_ambigua"
+    },
+    "execution": {
+      "engine": "regras_locais",
+      "model": false,
+      "model_name": null,
+      "temperature": "0.2",
+      "model_calls": 0,
+      "model_output_tokens": 0,
+      "max_output_tokens": 300,
+      "timeout_seconds": 20,
+      "recursion_limit": 12,
+      "prompt_sha256": {
+        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+      },
+      "retrieval_calls": 0,
+      "thread_id": "08_entrada_ambigua"
+    },
+    "paused_action": null,
+    "human_response": null,
+    "write_attempts": [],
+    "decision": {
+      "status": "clarification",
+      "title": null,
+      "reason": "O pedido combina preferencias que podem levar a escolhas diferentes.",
+      "platform": null,
+      "confidence": "low",
+      "missing_info": "qual clima deve ter prioridade",
+      "next_step": "perguntar qual preferencia vence",
+      "sufficient": false,
+      "sources": []
+    },
+    "trajectory": [
+      {
+        "node": "triage",
+        "at": 1792194446.7035248,
+        "route": "finish",
+        "mood": null,
+        "reference": null,
+        "lookup_error": null,
+        "unknown_reference": null
+      }
+    ],
+    "finished_at": "2026-10-16T23:47:26.706567+00:00"
+  },
+  {
+    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
+    "working_tree_dirty": true,
+    "case_id": "09_fora_de_escopo",
+    "started_at": "2026-10-16T23:47:26.706582+00:00",
+    "request": {
+      "message": "Qual e a previsao do tempo?",
+      "user_id": "demo-p2-09",
+      "subscriptions": [
+        "Netflix"
+      ],
+      "max_rating": "16+",
+      "region": "BR",
+      "session_id": "09_fora_de_escopo",
+      "case_id": "09_fora_de_escopo"
+    },
+    "execution": {
+      "engine": "regras_locais",
+      "model": false,
+      "model_name": null,
+      "temperature": "0.2",
+      "model_calls": 0,
+      "model_output_tokens": 0,
+      "max_output_tokens": 300,
+      "timeout_seconds": 20,
+      "recursion_limit": 12,
+      "prompt_sha256": {
+        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+      },
+      "retrieval_calls": 0,
+      "thread_id": "09_fora_de_escopo"
+    },
+    "paused_action": null,
+    "human_response": null,
+    "write_attempts": [],
+    "decision": {
+      "status": "out_of_scope",
+      "title": null,
+      "reason": "Este agente recomenda filmes e series a partir do que voce quer sentir.",
+      "platform": null,
+      "confidence": "low",
+      "missing_info": "nenhuma",
+      "next_step": "pedir um pedido de recomendacao",
+      "sufficient": false,
+      "sources": []
+    },
+    "trajectory": [
+      {
+        "node": "triage",
+        "at": 1792194446.7089267,
+        "route": "finish",
+        "mood": null,
+        "reference": null,
+        "lookup_error": null,
+        "unknown_reference": null
+      }
+    ],
+    "finished_at": "2026-10-16T23:47:26.714491+00:00"
+  }
+]

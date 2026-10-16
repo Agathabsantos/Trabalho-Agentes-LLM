@@ -2,34 +2,46 @@
 
 ## Documentação técnica
 
-| Fonte | Link | Para que serviu |
+| Fonte | Link | Uso/limite |
 |---|---|---|
-| OpenAI — API Reference (Chat Completions) | https://platform.openai.com/docs/api-reference/chat | formato de `chat.completions.create`, que substituiu a `responses.create` usada na v1 do código |
-| OpenAI — Function calling | https://platform.openai.com/docs/guides/function-calling | esquema das 4 ferramentas em `src/ferramentas.py:ESQUEMA_FERRAMENTAS` |
-| OpenAI — Structured outputs | https://platform.openai.com/docs/guides/structured-outputs | contrato de saída JSON em `prompts/system.txt` |
-| OpenAI — Pricing | https://openai.com/api/pricing/ | **não consultada**: os candidatos OpenAI saíram da lista em 18/09/2026 (ver `modelos.md` §2), então o preço deles não entra na conta |
-| Mistral AI — Documentação | https://docs.mistral.ai/ | confirmar a compatibilidade OpenAI do endpoint, que é o que permite trocar de provedor mudando só `LLM_BASE_URL` |
-| Mistral AI — API Pricing | https://mistral.ai/pricing/api | **consultada em 18/09/2026**: preencheu a tabela de preço de `modelos.md` §3 (Ministral 3B/8B/14B) |
-| Mistral AI — Pricing (docs) | https://docs.mistral.ai/inference/pricing | **consultada em 18/09/2026**: segunda fonte, usada para conferir os preços acima. As duas batem |
-| SQLite — Documentação | https://www.sqlite.org/docs.html | modelagem das tabelas `titulos` e `historico` em `src/catalogo_db.py` |
-| Python — `sqlite3` | https://docs.python.org/3/library/sqlite3.html | camada de acesso e `row_factory` |
-| Python — `unicodedata` | https://docs.python.org/3/library/unicodedata.html | normalização de acentos no casamento de clima (`catalogo_db.normalizar`) |
-| Model Context Protocol | https://modelcontextprotocol.io/ | conferir que `catalogo_db.py` tem formato reescrevível como servidor MCP na Parte 2 |
+| LangGraph — Graph API | https://docs.langchain.com/oss/python/langgraph/graph-api | `StateGraph`, estado, reducers, nós, arestas condicionais, `recursion_limit`; versão local fixada em 0.6.10 |
+| LangGraph — Interrupts | https://docs.langchain.com/oss/python/langgraph/interrupts | `interrupt`, reinício do nó, `Command(resume=...)`, necessidade de checkpoint e idempotência |
+| LangGraph — Persistence | https://docs.langchain.com/oss/python/langgraph/persistence | fronteira checkpointer/thread vs armazenamento de longo prazo; implementação usa SQLite local |
+| LangGraph — Add memory | https://docs.langchain.com/oss/python/langgraph/add-memory | conceito de memória curta/longa; o projeto guarda episódica e chave-valor no próprio SQLite |
+| LangGraph API, `SqliteSaver` | https://reference.langchain.com/python/langgraph/checkpoints/ | checkpointer e retomada; `langgraph-checkpoint-sqlite==2.0.11` |
+| SQLite FTS5 | https://www.sqlite.org/fts5.html | busca textual, `MATCH`, BM25/ordenação; índice de episódios da memória |
+| SQLite | https://www.sqlite.org/docs.html | transações e consultas das tabelas do catálogo/histórico |
+| Python `sqlite3` | https://docs.python.org/3/library/sqlite3.html | camada de persistência e `BEGIN IMMEDIATE` |
+| Python `unicodedata` | https://docs.python.org/3/library/unicodedata.html | normalização de acentos |
+| Pydantic models | https://pydantic.dev/docs/validation/latest/concepts/models/ | validar `RecommendationResult` e `Interpretation` |
+| OpenAI Chat Completions | https://platform.openai.com/docs/api-reference/chat | chamada compatível de interpretação quando há credencial; modo local não representa resultado de LLM |
+| OpenAI JSON mode / structured output | https://platform.openai.com/docs/guides/structured-outputs | formato JSON; validação semântica local continua necessária |
+| Python `hashlib` | https://docs.python.org/3/library/hashlib.html | SHA-256 do prompt e chave de idempotência derivada de JSON canônico |
+| Python `json` | https://docs.python.org/3/library/json.html | schema e logs JSON versionados |
+| Mistral AI — Docs | https://docs.mistral.ai/ | endpoint compatível configurável; nenhum serviço externo consultado durante as demos |
+| Mistral API Pricing | https://mistral.ai/pricing/api | preços usados no benchmark da Parte 1, consultados em 2026-09-18 |
+| Mistral pricing docs | https://docs.mistral.ai/inference/pricing | segunda conferência dos preços da Parte 1 |
 
-## Material da disciplina
+## Enunciado e material da disciplina
 
-- Enunciado da Parte 1 (`01-entrega-parte-1`) — requisitos, rubrica de avaliação e os quatro casos difíceis exigidos no item 4.5.
-- Visão geral do trabalho (`00-visao-geral`) — os quatro antipadrões, usados para checar o tema.
-- Nota 01 da aula de casos de uso — tabela de eixos de ganho, usada na `case.md` §5.2.
-- Aula 03, versionamento de prompt — origem do carimbo `prompt × modelo × parâmetros` no cabeçalho de `prompts/system.txt`.
-- Caso Klarna, visto em aula — origem da tensão negócio × usuário declarada na `case.md` §5.2.
+- Enunciado da Parte 2 (“O agente de verdade”), fornecido pelo usuário nesta conversa: onze itens, contrato de I/O, RAG, memória, LangGraph e HITL.
+- Visão geral do trabalho e enunciado da Parte 1, registrados na documentação inicial do projeto.
+- Aulas 05–09: padrões de workflow, reducers, checkpoint, interrupção e LangGraph; decisões contextualizadas em `docs/arquitetura.md` e `docs/grafo.md`.
+- Aula 03: versionamento de prompt e hipótese de remoção documentada em `docs/prompts.md`.
+- Caso Klarna, visto em aula, usado na análise anterior da tensão negócio/usuário em `docs/case.md`.
 
-## Dados
+## Dados e domínio
 
-Os dados de catálogo e histórico em `dados/` são **simulados e produzidos pelo grupo**. Os títulos citados (Severance, Dark, The Office e outros) são obras reais, mas **as tags de clima, as plataformas, as classificações e as avaliações no arquivo foram escritas por nós** para o exercício — não foram extraídas de nenhuma base e não correspondem à disponibilidade real em nenhuma plataforma.
+`dados/streaming_catalog.json`, `dados/historico_seed.jsonl` e as avaliações em
+`dados/rag_corpus.jsonl` são dados **sintéticos escritos para o exercício**.
+Nomes de obras são reais; tags, reviews, plataformas, disponibilidade e
+classificações não são verificados e não devem ser atribuídos a serviços atuais.
+A demo não consultou TMDB, IMDb, JustWatch nem APIs de streaming. A decisão de
+buscar lexicalmente e os dez casos de avaliação estão em `docs/rag.md` e
+`dados/rag_eval.json`.
 
-Isso é deliberado, e o `case.md` §8 explica como a dificuldade foi preservada. Nenhuma API externa de catálogo (TMDB, IMDb, JustWatch) é consultada nesta entrega; a integração com catálogo real é escopo da Parte 2.
+## Não consultado/não implementado
 
-## Observação sobre o que NÃO foi consultado
-
-Não usamos leaderboard público para escolher o modelo. O enunciado pede explicitamente que a escolha venha de verificação própria no domínio do caso, e é isso que `src/benchmark_modelos.py` produz — ver `modelos.md` §4.
+- Não há servidor/cliente MCP nesta Parte 2, embora o enunciado sugira MCP como ecossistema possível.
+- Não há base vetorial, modelo de embeddings, API de catálogo externa ou medição de paralelismo.
+- Não foi executado teste A/B real de remoção de frase no provedor: não havia `.env`/credencial na sessão. O documento de prompt declara essa limitação, não finge resultado.

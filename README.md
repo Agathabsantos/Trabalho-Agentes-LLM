@@ -1,209 +1,137 @@
-# Agente de recomendação de próximo título — Parte 1
+# Agente de recomendação de títulos em streaming — Parte 2
 
 ## Integrantes
+
 - Agatha Barbosa Marinho dos Santos
 - Bruna Kinjo Luiz Pinto
 - Kayke Ahrens Biscegli
 - Matheus da Silva Marini
 
-## O problema, em uma frase
+O sistema recebe **texto livre** sobre o que a pessoa quer sentir, consulta o
+catálogo e as avaliações curadas, filtra por assinatura/classificação/histórico,
+propõe uma opção citada por evidência e **para para o responsável pela conta**
+aprovar, editar ou rejeitar a escrita no histórico.
 
-Um agente que identifica o motivo real do gosto do usuário em um título e recomenda a próxima série ou filme disponível na conta, sem repetir itens e sem sair do perfil ou da assinatura.
+## Rodar do zero
 
----
-
-## Como rodar
-
-Do zero, em menos de 5 minutos:
+Python 3.11+ recomendado (validado com Python 3.13.5):
 
 ```bash
-git clone <url-do-repositorio>
-cd Trabalho-Agentes-LLM
-
 python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-cp .env.example .env               # e preencha o .env (veja abaixo)
-
-python src/agent.py                # roda os 5 casos
-python src/verificador.py          # confere o resultado contra o gabarito
+cp .env.example .env            # opcional para o modelo; sem chave, usa parser local
+python src/demo_part2.py
+python -m unittest discover -s tests -v
 ```
 
-O `.env` precisa de três variáveis. **Nenhuma delas vai para o git** — o `.env` está no `.gitignore`.
+Para uma chamada interativa, sem chave de modelo:
 
-| Variável | O que é | Exemplo |
-|---|---|---|
-| `OPENAI_API_KEY` | chave do provedor do **modelo** (não é chave do TMDB) | `sk-...` |
-| `LLM_BASE_URL` | endpoint do provedor. Vazio = padrão da OpenAI | `https://api.mistral.ai/v1` |
-| `MODEL_NAME` | id do modelo, como o provedor o chama | `ministral-8b-2512` |
-
-Trocar de provedor (OpenAI, Mistral, modelo local compatível) muda **só essas duas variáveis**, nenhuma linha de código.
-
-**Não tem chave agora?** `python src/agent.py --sem-modelo` roda o mesmo laço com uma política de regras fixas, sem chamar o LLM. Serve para ver o sistema funcionar — **mas não vale como entrega**, e todo log gerado assim sai carimbado com `"motor": "heuristica_sem_modelo"`.
-
----
-
-## Como usar
-
-### O que a pessoa digita
-
-Uma frase em linguagem natural dizendo o que ela gostou e o que quer agora:
-
-```
-Curti muito Severance. Me indica algo parecido.
-Quero algo leve e sem ficar pensando demais.
+```bash
+python src/graph.py --message "Curti Severance pelo mal-estar constante. Indica algo parecido." --user-id u-demo --subscriptions Netflix --max-rating 16+
 ```
 
-Nesta entrega as frases vêm dos 5 casos de `dados/cases.json`, junto com o contexto da conta (quais plataformas o usuário assina, qual a classificação do perfil, o `user_id`). Esse contexto é **injetado pelo código**, não perguntado — o sistema não pergunta o que já sabe.
+O CLI mostra a proposta e pede `aprovar`, `rejeitar` ou JSON com edição. O
+responsável pode, por exemplo, aprovar corrigindo `reason` e marcando
+`remember_preference: true`. Não há escrita antes da aprovação. O banco SQLite
+e o checkpoint são criados em `dados/` na primeira execução; ambos são locais e
+não devem ser apagados enquanto houver conversa pendente.
 
-### O que o sistema faz com isso
+O modo de interpretação com LLM é opcional. Para ativá-lo, preencha no `.env`
+`OPENAI_API_KEY`, `MODEL_NAME` e, se aplicável, `LLM_BASE_URL`. A chave nunca é
+versionada. Sem chave, os logs dizem `regras_locais`; essa execução não é
+apresentada como resultado do modelo. O grafo usa zero ou uma chamada de modelo,
+uma busca de evidência e exige aprovação humana.
 
-Consulta o título citado no catálogo (SQLite), decide **qual clima o usuário realmente quer** — que nem sempre é o do título que ele citou —, busca candidatos já filtrados por assinatura, classificação e histórico, escolhe um, e grava a decisão. Se nada passa nos filtros, ele para e diz por quê, em vez de sugerir algo que a pessoa não consegue assistir.
+## Como usar e o que volta
 
-### Que saída ela recebe
+**Texto que a pessoa digita:**
 
-Um objeto JSON com sete campos:
+> Curti Severance pelo mal-estar constante. Indica algo parecido.
 
-| Campo | Como interpretar |
-|---|---|
-| `status` | `recommendation` = achou; `no_match` = não há título válido, e o `reason` diz por quê |
-| `title` | o título recomendado, ou `null` |
-| `reason` | a evidência do catálogo que sustenta a escolha — no máximo 2 frases |
-| `platform` | em qual plataforma **assinada** o título está |
-| `confidence` | `low`, `medium` ou `high` |
-| `missing_info` | o que o sistema ainda não sabe |
-| `next_step` | qual é a próxima ação do processo |
-
-### Um exemplo completo, de uma execução real
-
-> Saída copiada de `logs/demo_runs.json`, de uma execução com o modelo
-> (`"motor": "modelo"`, `"modelo": "ministral-8b-2512"`). Para reproduzir:
-> configure o `.env` e rode `python src/agent.py`.
-
-**Entrada** (caso `caso_simples`): usuário `u-001`, assina Netflix, perfil 16+, cita *Severance* como referência, descreve o clima como "mal-estar constante".
-
-```
-$ python src/agent.py
-
-  caso_simples      -> Dark   (4 passos, 3 ferramentas, parada: resposta_final)
-```
-
-**Trajetória registrada:**
-
-```
-passo 1 | consultar_titulo        | sem erro
-passo 2 | buscar_candidatos       | sem erro  -> candidatos: ["Dark"]
-passo 3 | registrar_recomendacao  | sem erro
-passo 4 | resposta final          | parada: resposta_final
-```
-
-**Saída:**
+Identidade, assinaturas, região e classificação são metadados do aplicativo
+chamador; não são parte de um formulário digitado. A saída é validada pelo
+modelo Pydantic `RecommendationResult`. Exemplo integral copiado da execução
+`01_caminho_feliz` em `logs/part2_runs.json`:
 
 ```json
 {
   "status": "recommendation",
   "title": "Dark",
-  "reason": "O clima de mal-estar constante e misterio é semelhante ao de Severance, com uma narrativa que gera inquietação contínua, como destacado nas avaliações: 'o clima de inquietacao e o que chama atencao' e 'sentimento de que algo esta errado o tempo todo'.",
+  "reason": "A avaliacao cita: ‘Sentimento de que algo esta errado o tempo todo.’",
   "platform": "Netflix",
-  "confidence": "high",
+  "confidence": "medium",
   "missing_info": "nenhuma",
-  "next_step": "nenhuma"
+  "next_step": "aguardar a reacao do usuario",
+  "sufficient": true,
+  "sources": [
+    {
+      "id": "dark-review-2",
+      "title": "Dark",
+      "text": "Sentimento de que algo esta errado o tempo todo.",
+      "source": "dados/streaming_catalog.json:Dark.reviews[1]",
+      "score": 1
+    }
+  ]
 }
 ```
 
-**Conferindo o resultado:**
+`source`/`sources` permite conferir a justificativa. `sufficient=false` significa
+que não há base suficiente e que o título é `null`; recusa é saída normal,
+não exceção. Os contratos e exemplos completos, com data, commit e referência
+exata a log, ficam em `docs/io.md`.
 
-```
-$ python src/verificador.py
+**Se o grafo parar:** a pessoa vê título, plataforma, trecho-fonte, consequência
+da escrita e prazo de 24h. Responde aprovando, editando ou rejeitando. Silêncio
+não aprova: a execução fica pendente no checkpoint; se a retomada ocorrer depois
+do prazo, vira rejeição sem escrita. `expirar_pendencia` permite ao chamador
+agendar o fechamento após 24h, mas o protótipo não inclui daemon ou UI. O
+aprovador dos logs é simulado.
 
-CASO                              ESPERADO        OBTIDO          ACERTO   INVARIANTES
---------------------------------------------------------------------------------------------
-caso_simples                      Dark            Dark            OK       ok
-divergencia_usuario_vs_sistema    The Office      The Office      OK       ok
-registro_inexistente              no_match        no_match        OK       ok
-nao_dispara_acao                  no_match        no_match        OK       ok
-nao_repete_recomendacao           The OA          The OA          OK       ok
---------------------------------------------------------------------------------------------
-ACERTOS:     5/5   (minimo exigido: 4/5)
-INVARIANTES: 0 violacoes   (maximo tolerado: 0)
-
-RESULTADO: APROVADO
-```
-
-### O que o sistema **não** faz
-
-- **não sugere fora da assinatura.** Se o título só existe numa plataforma que o usuário não assina, ele não aparece — e se o modelo insistir, a ferramenta de escrita recusa e explica por quê;
-- **não repete.** Título já oferecido àquele usuário é excluído da busca;
-- **não passa da classificação** do perfil da sessão;
-- **não inventa título.** Se a referência não existe no catálogo, ele responde `no_match` e pede o nome correto, em vez de chutar algo parecido;
-- **não tem interface de chat.** Nesta entrega o agente é um programa de linha de comando: lê os pedidos de `dados/cases.json` e escreve JSON. O chat é o canal previsto no `docs/case.md`, e a interface é escopo da Parte 2;
-- **não conversa em várias trocas.** É uma troca só; o refinamento é escopo da Parte 2;
-- **não dá play.** Ele diz *qual* título e *em qual* plataforma assinada; ir até lá é com a pessoa. Não é um recurso dentro da Netflix ou do Prime;
-- **não usa catálogo real.** Os dados são simulados — ver `docs/fontes.md`.
-
-**Quando ele não sabe responder**, a saída vem com `status: "no_match"`, e o `reason` diz qual filtro barrou (assinatura, classificação ou histórico vazio de candidatos). Ele nunca devolve uma sugestão sem evidência.
-
----
-
-## Como verificar que o sistema faz o que diz
+## Verificação e reprodução
 
 ```bash
-python src/verificador.py              # 5 casos x gabarito + 4 invariantes
-python src/verificador.py --autoteste  # prova que o verificador não é vazio
+python -m unittest discover -s tests -v
+python src/demo_part2.py           # nove execuções reproduzíveis; regenera o log
+python conferir_grafo.py           # nós/arestas do objeto compilado pelo sistema
+python src/verificador.py          # verificador legado; reconstrói dados/catalogo.db
 ```
 
-O `--autoteste` injeta quatro decisões **propositalmente erradas** — uma fora da assinatura, uma acima da classificação, uma repetida e um título inventado — e falha se alguma passar batido. Um verificador que aprova tudo dá falsa segurança.
+O verificador da Parte 1 reconstrói o banco seed e apaga o histórico local do
+grafo. Rode-o apenas em uma cópia descartável, nunca enquanto houver sessões ou
+aprovações pendentes.
 
-O gabarito (`expected_title`, `expected_status`) **não é visível ao agente**: só o `verificador.py` lê esses campos.
+Em 2026-10-16, a suíte rodou **18 testes** e o script gravou nove casos com
+regras locais.
+Os logs de avaliação não usam API key. O hash `4fe49e86f9415c93edf64f2dbda27921ccab3443`
+é o commit-base existente no início da execução; o arquivo registra
+`working_tree_dirty: true`, pois as mudanças da Parte 2 ainda não estavam
+commitadas. Depois de criar o commit de entrega, rode `python src/demo_part2.py`
+novamente para que o SHA reflita a árvore consolidada.
 
----
+## Estrutura principal
 
-## Estrutura
+- `src/graph.py`: `StateGraph`, contrato Pydantic, interpretação, RAG, pausa e escrita idempotente.
+- `src/catalogo_db.py`: SQLite, filtros de autoridade e memória local.
+- `src/rag.py`: recuperação textual com fonte e filtro de revogação.
+- `src/prompts/`: prompts versionados e carregados durante a execução.
+- `dados/`: catálogo sintético, corpus curado, dataset de avaliação e históricos.
+- `docs/`: case complementado, arquitetura, memória, RAG, HITL, I/O e prompts.
+- `logs/part2_runs.json`: nove trajetórias de execução.
+- `conferir_grafo.py`: inspeção do grafo de produção.
 
-```
-README.md              este arquivo
-requirements.txt       dependências com versão fixada
-.env.example           nomes das variáveis, sem nenhum valor
+A implementação **não** consulta TMDB, Netflix, Prime Video ou outra API de
+catálogo. Títulos, opiniões, serviços e classificações nos fixtures são dados
+simulados pelo grupo, não disponibilidade atual. O sistema é uma prova de
+conceito local, sem autenticação de contas ou garantia operacional LGPD.
 
-docs/
-  estado-da-entrega.md o que foi feito, o que falta, como conferir
-  case.md              o problema, usuários, workflow, negócio, verificador
-  modelos.md           os 3 candidatos, a conta de custo, a decisão
-  arquitetura.md       §0 = o que está implementado; §1+ = alvo da Parte 2
-  fontes.md            tudo que foi consultado, com link
-  autopsia.md          a autópsia do caso real
-  base-de-conhecimento-v1.md  as fontes que o RAG da Parte 2 vai indexar
+## Documentos
 
-prompts/
-  system.txt           v2 — carimbado com modelo, parâmetros e técnica
-  user_prompt.txt      v2 — template do contexto da conta
-
-src/
-  agent.py             o laço: estado, orçamento, terminação, trajetória
-  motores.py           MotorModelo (LLM) e MotorHeuristico (sem LLM)
-  ferramentas.py       as 4 ferramentas; erro volta como dado
-  catalogo_db.py       camada de acesso SQLite (item 4.2; vira MCP na Parte 2)
-  verificador.py       confere gabarito + invariantes; tem autoteste
-  benchmark_modelos.py roda os 5 casos nos 3 candidatos (item 3.3)
-
-dados/
-  streaming_catalog.json  catálogo simulado, 9 títulos
-  historico_seed.jsonl    histórico inicial
-  cases.json              os 5 casos, com gabarito e descrição do que testam
-  catalogo.db             SQLite derivado (não versionado)
-
-logs/
-  demo_runs.json          as execuções demonstradas
-```
-
----
-
-## O que ainda falta (declarado, não escondido)
-
-| Pendência | Onde | Quem resolve |
-|---|---|---|
-| Rodar com chave e regerar `logs/demo_runs.json` com `"motor": "modelo"` | `src/agent.py` | o grupo |
-| Rodar o benchmark dos 3 modelos e preencher `modelos.md` §4 | `src/benchmark_modelos.py` | o grupo |
-| Medir a linha de base: 10 decisões cronometradas | `docs/case.md` §5.2 | o grupo |
-| Preencher a tabela de preço por token na data da entrega | `docs/modelos.md` §3 | o grupo |
+- `docs/case.md` — domínio e complemento da Parte 2.
+- `docs/arquitetura.md` e `docs/grafo.md` — diagrama, topologia, estado e decisões.
+- `docs/rag.md` e `dados/rag_eval.json` — corpus, dez perguntas e escolha de busca.
+- `docs/memoria.md` — checkpoint, memória longa e limites de remoção.
+- `docs/humano.md` — pausa, edição, prazo e idempotência.
+- `docs/prompts.md` — plano e limites do teste do prompt.
+- `docs/io.md` — schema e exemplos copiados dos logs.
+- `docs/modelos.md`, `docs/fontes.md` — análise da Parte 1 e fontes técnicas.

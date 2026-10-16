@@ -122,8 +122,9 @@ dólar por 100 execuções"): são **8.5 centavos** por 100 execuções.
 
 **O que esta conta não cobre:** o custo das execuções que falham e são
 repetidas, o custo do benchmark (três modelos × cinco casos, ~66k tokens no
-total, ~US$ 0,01) e o crescimento de contexto que o RAG da Parte 2 vai trazer —
-o §5 da §5 lista esse último como condição de reavaliar o modelo.
+total, ~US$ 0,01) e uma base documental real em escala. O RAG da Parte 2 usa
+fixtures pequenas e busca lexical; não há benchmark novo de custo do grafo com
+LLM.
 
 **Se a escolha migrar para o 3B** (condição 1 da §5), o preço cai para US$ 0,10/1M
 e o custo por execução cai proporcionalmente, para cerca de **US$ 0.000567** —
@@ -131,7 +132,7 @@ um terço a menos, supondo o mesmo número de tokens.
 
 ## 4. A verificação mínima — 5 casos nos 3 candidatos
 
-Executado em **19/09/2026**, com o mesmo prompt (`prompts/system.txt` v2), os
+Executado em **19/09/2026**, com o mesmo prompt (`src/prompts/system.txt` v2), os
 mesmos parâmetros (`temperature=0.2`) e os mesmos 5 casos de `dados/cases.json`.
 Saída bruta em `logs/benchmark_modelos.json`; tabela gerada por
 `src/benchmark_modelos.py`, não escrita à mão.
@@ -251,8 +252,8 @@ de ~5 s da §1. Houve um pico isolado de 26 s (§4), registrado e não explicado
 
 1. **O 3B passar a acertar a divergência de forma estável** — por exemplo, com
    um ajuste de prompt que o impeça de reinterpretar o pedido depois da busca.
-   Vale tentar na Parte 2: se resolver, a troca é imediata e o custo cai um
-   terço. Hoje, sem esse ajuste, ele está fora.
+   Vale tentar numa avaliação com credencial do grafo da Parte 2: se resolver,
+   a troca é imediata e o custo cai um terço. Hoje, sem esse ajuste, ele está fora.
 2. **Qualquer candidato falha em `nao_dispara_acao` ou `registro_inexistente`** →
    está eliminado, mesmo que acerte os outros três. São os casos onde o erro é
    caro. *Nenhum dos três falhou nestes dois casos em nenhuma das rodadas.*
@@ -264,9 +265,9 @@ de ~5 s da §1. Houve um pico isolado de 26 s (§4), registrado e não explicado
    tamanhos de uma família, não entre provedores.
 5. **O volume crescer** e o custo por execução (§3) virar gargalo → migração para
    modelo local, aceitando perda de qualidade nos casos de divergência.
-6. **A Parte 2 trazer RAG** e a janela de contexto crescer com trechos de
-   avaliações → o eixo "janela de contexto", hoje descartado por não separar
-   ninguém, volta a ser critério.
+6. **O corpus RAG crescer para dados reais** e a janela de contexto crescer com
+   documentos/trilhas → o eixo "janela de contexto", hoje descartado por não
+   separar os modelos da Parte 1, volta a ser critério.
 
 **O que esta decisão não prova.** Cinco casos, um provedor, uma família de
 modelos, duas rodadas. Não é medição estatística e não sustenta afirmação sobre

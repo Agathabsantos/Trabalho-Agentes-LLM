@@ -29,7 +29,7 @@ except ImportError:
     load_dotenv = None
 
 ROOT = Path(__file__).resolve().parent.parent
-PROMPTS_DIR = ROOT / "prompts"
+PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 CASES_PATH = ROOT / "dados" / "cases.json"
 LOG_PATH = ROOT / "logs" / "demo_runs.json"
 
