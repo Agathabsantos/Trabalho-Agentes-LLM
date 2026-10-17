@@ -84,8 +84,8 @@ exata a log, ficam em `docs/io.md`.
 **Se o grafo parar:** a pessoa vê título, plataforma, trecho-fonte, consequência
 da escrita e prazo de 24h. Responde aprovando, editando ou rejeitando. Silêncio
 não aprova: a execução fica pendente no checkpoint; se a retomada ocorrer depois
-do prazo, vira rejeição sem escrita. `expirar_pendencia` permite ao chamador
-agendar o fechamento após 24h, mas o protótipo não inclui daemon ou UI. O
+do prazo, vira rejeição sem escrita. `python src/expirar_pendencias.py`, rodado
+de hora em hora por cron, rejeita as pendências vencidas; o protótipo não inclui UI. O
 aprovador dos logs é simulado.
 
 ## Verificação e reprodução
@@ -94,14 +94,23 @@ aprovador dos logs é simulado.
 python -m unittest discover -s tests -v
 python src/demo_part2.py           # nove execuções reproduzíveis; regenera o log
 python conferir_grafo.py           # nós/arestas do objeto compilado pelo sistema
+python src/expirar_pendencias.py   # rejeita aprovações pendentes há mais de 24h
+python src/remover_titular.py <user_id>  # remoção a pedido do titular, com varredura
+python src/ab_frase.py             # teste da frase do prompt (§2.3); exige chave no .env
 python src/verificador.py          # verificador legado; reconstrói dados/catalogo.db
 ```
+
+Com `OPENAI_API_KEY` e `MODEL_NAME` no `.env`, o mesmo `python src/demo_part2.py`
+passa a chamar o modelo no nó `triage`, e o log registra `engine=modelo`,
+`model_calls=1` e tokens por caso. Se o status de algum caso divergir do
+esperado, o log é gravado mesmo assim (`matches_expected=false`) e o script
+termina com código de erro listando os casos.
 
 O verificador da Parte 1 reconstrói o banco seed e apaga o histórico local do
 grafo. Rode-o apenas em uma cópia descartável, nunca enquanto houver sessões ou
 aprovações pendentes.
 
-Em 2026-10-16, a suíte rodou **18 testes** e o script gravou nove casos com
+Em 2026-10-17, a suíte rodou **20 testes** e o script gravou nove casos com
 regras locais.
 Os logs de avaliação não usam API key. O hash `4fe49e86f9415c93edf64f2dbda27921ccab3443`
 é o commit-base existente no início da execução; o arquivo registra

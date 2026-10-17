@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from catalogo_db import construir_banco  # noqa: E402
+from catalogo_db import CatalogoDB, construir_banco  # noqa: E402
 from graph import create_graph, resultado_publico, resumir  # noqa: E402
 from langgraph.checkpoint.sqlite import SqliteSaver  # noqa: E402
 
@@ -120,7 +120,11 @@ def _run_one(graph, case: dict, db_path: Path, provenance: dict) -> dict:
             duplicate_state = resumir(thread_id, human_response, graph, db_path)
             write_attempts.append(duplicate_state["duplicate_write_result"])
     output = resultado_publico(state)
-    assert output["status"] == case["expected"], (case["case_id"], output)
+    # Cada caso usa um user_id proprio: o volume dele e o que esta execucao gravou.
+    with CatalogoDB(db_path) as db:
+        memory_written = db.volume_titular(case["user_id"])
+    # Com modelo real a saida pode divergir do esperado: isso e resultado a
+    # registrar, nao motivo para perder as outras execucoes.
     return {
         **provenance,
         "case_id": case["case_id"],
@@ -143,6 +147,9 @@ def _run_one(graph, case: dict, db_path: Path, provenance: dict) -> dict:
         "paused_action": pending_action,
         "human_response": human_response,
         "write_attempts": write_attempts,
+        "memory_written": memory_written,
+        "expected_status": case["expected"],
+        "matches_expected": output["status"] == case["expected"],
         "decision": output,
         "trajectory": state.get("trajectory", []),
         "finished_at": datetime.now(timezone.utc).isoformat(),
@@ -164,7 +171,10 @@ def main() -> None:
     OUTPUT_PATH.write_text(json.dumps(runs, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"{len(runs)} execucoes gravadas em {OUTPUT_PATH.relative_to(ROOT)}")
     for run in runs:
-        print(f"{run['case_id']}: {run['decision']['status']} | retrievals={run['execution']['retrieval_calls']} | commit={run['source_commit'][:12]} dirty={run['working_tree_dirty']}")
+        print(f"{run['case_id']}: {run['decision']['status']} | engine={run['execution']['engine']} | retrievals={run['execution']['retrieval_calls']} | commit={run['source_commit'][:12]} dirty={run['working_tree_dirty']}")
+    divergentes = [run["case_id"] for run in runs if not run["matches_expected"]]
+    if divergentes:
+        sys.exit(f"status diferente do esperado em: {', '.join(divergentes)}")
 
 
 if __name__ == "__main__":

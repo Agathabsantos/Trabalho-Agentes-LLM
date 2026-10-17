@@ -71,7 +71,7 @@ class Evidence(BaseModel):
 class RecommendationResult(BaseModel):
     """Contrato validado retornado ao consumidor."""
 
-    status: Literal["recommendation", "no_match", "clarification", "out_of_scope", "rejected"]
+    status: Literal["recommendation", "no_match", "clarification", "out_of_scope", "rejected", "error"]
     title: str | None
     reason: str
     platform: str | None
@@ -87,6 +87,13 @@ class Interpretation(BaseModel):
     mood: Mood | None
     ambiguous: bool
     clarification: str
+
+
+# json_object, nao json_schema: medido em 2026-10-17 com ministral-8b-2512, o
+# schema estrito trocava o clima dito ("mal-estar" -> ambiente_corporativo) em
+# 4 de 4 chamadas, contra 3 de 4 certas com json_object. O formato fica a cargo
+# do prompt v2 e da validacao Pydantic, que sobe como status "error".
+INTERPRETATION_RESPONSE_FORMAT = {"type": "json_object"}
 
 
 class Request(TypedDict, total=False):
@@ -270,7 +277,7 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
                     model=configured_model,
                     messages=[{"role": "system", "content": prompt},
                               {"role": "user", "content": message}],
-                    response_format={"type": "json_object"},
+                    response_format=INTERPRETATION_RESPONSE_FORMAT,
                     max_tokens=300,
                     temperature=float(configured_temperature),
                 )
@@ -282,7 +289,9 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
                 model_out_of_scope = parsed.intent == "out_of_scope"
                 model_ambiguous = parsed.ambiguous
             except Exception as exc:
-                result = _result("no_match", f"A interpretacao do pedido falhou ({type(exc).__name__}); nenhum titulo foi escolhido.",
+                # Falha operacional, nao recusa de dominio: status proprio para o
+                # log nao confundir erro do provedor com "nao ha base para recomendar".
+                result = _result("error", f"A interpretacao do pedido falhou ({type(exc).__name__}); nenhum titulo foi escolhido.",
                                  next_step="tentar novamente ou reformular")
                 return {"reference_title": reference, "route": "finish", "decision": result,
                         "started_at": state.get("started_at") or time.monotonic(),
@@ -593,6 +602,19 @@ def expirar_pendencia(thread_id: str, graph=None, agora: float | None = None):
     }), config={**config, "recursion_limit": MAX_NODES})
 
 
+def varrer_pendencias(graph=None, agora: float | None = None) -> list[str]:
+    """Percorre todas as threads do checkpointer e expira as vencidas.
+
+    E o que o agendador externo (cron, systemd timer) chama; devolve os
+    thread_ids rejeitados por prazo para o log de operacao.
+    """
+    graph = graph or get_graph()
+    thread_ids = sorted({item.config["configurable"]["thread_id"]
+                         for item in graph.checkpointer.list(None)})
+    return [thread_id for thread_id in thread_ids
+            if expirar_pendencia(thread_id, graph, agora) is not None]
+
+
 def resultado_publico(state: dict) -> dict:
     """Devolve contrato final ou estrutura de pausa do LangGraph."""
     if state.get("__interrupt__"):
@@ -600,6 +622,43 @@ def resultado_publico(state: dict) -> dict:
     if state.get("decision"):
         return RecommendationResult.model_validate(state["decision"]).model_dump()
     return _result("no_match", "A execucao terminou sem decisao.", next_step="verificar logs")
+
+
+def _threads_com_titular(graph, user_id: str) -> list[str]:
+    return sorted({item.config["configurable"]["thread_id"]
+                   for item in graph.checkpointer.list(None)
+                   if item.checkpoint.get("channel_values", {}).get("user_id") == user_id})
+
+
+def ocorrencias_no_checkpoint(graph, user_id: str) -> int:
+    """Varre os bytes do checkpoint SQLite, sem depender do campo user_id do estado."""
+    agulha = user_id.encode("utf-8")
+    total = 0
+    for tabela, colunas in (("checkpoints", ("checkpoint", "metadata")), ("writes", ("value",))):
+        for coluna in colunas:
+            total += graph.checkpointer.conn.execute(
+                f"SELECT COUNT(*) FROM {tabela} WHERE instr(CAST({coluna} AS BLOB), ?) > 0",
+                (agulha,),
+            ).fetchone()[0]
+    return total
+
+
+def remover_titular(user_id: str, graph=None, db_path: Path = DB_PATH) -> dict:
+    """Remocao a pedido do titular: memoria SQLite e threads do checkpoint.
+
+    Devolve o que foi apagado e a varredura feita depois, que procura o
+    identificador de novo em vez de confiar na contagem do DELETE.
+    """
+    graph = graph or get_graph()
+    threads = _threads_com_titular(graph, user_id)
+    for thread_id in threads:
+        graph.checkpointer.delete_thread(thread_id)
+    with CatalogoDB(db_path) as db:
+        removidos = db.remover_titular(user_id)
+        restante = db.ocorrencias_titular(user_id)
+    restante["checkpoint_bytes"] = ocorrencias_no_checkpoint(graph, user_id)
+    return {"user_id": user_id, "removidos": {**removidos, "checkpoint_threads": len(threads)},
+            "varredura_depois": restante}
 
 
 def main() -> None:

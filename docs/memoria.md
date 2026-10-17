@@ -67,8 +67,19 @@ limitada e não constitui memória integral nem similaridade vetorial.
 | Procedural | `src/prompts/interpret_request.txt` e regras Python | política de interpretação, precedência do pedido, filtros, recusa e autorização; revisada por mantenedores. |
 
 O código é o escritor: uma linha episódica por recomendação aprovada; uma linha
-semântica somente após opt-in explícito; nenhum limite de bytes é alegado como
-medido. O ato de aprovar a escrita no histórico não autoriza automaticamente
+semântica somente após opt-in explícito.
+
+**Volume por execução.** Cada caso de `logs/part2_runs.json` registra em
+`memory_written` as linhas e os bytes de texto gravados por tabela. Uma
+execução aprovada grava 1 linha em `historico`, 1 em `episodios` (mais o FTS) e,
+só com opt-in, 1 em `memoria_semantica`. Uma execução que pergunta, recusa ou é
+rejeitada grava zero. Os bytes medidos estão na tabela abaixo.
+
+| Tabela | Linhas por execução aprovada | Bytes por linha (medido no log) |
+|---|---|---|
+| `historico` | 1 | *a preencher após `python src/demo_part2.py`* |
+| `episodios` | 1 | *a preencher* |
+| `memoria_semantica` | 0 ou 1 (opt-in) | *a preencher* | O ato de aprovar a escrita no histórico não autoriza automaticamente
 perfilamento semântico.
 
 ## Como a memória muda ou desaparece
@@ -77,11 +88,32 @@ perfilamento semântico.
 |---|---|---|
 | Contradição | parcialmente aplicável à preferência opt-in | `atualizar_preferencia` faz upsert por chave e substitui o valor anterior; `atualizado_em` registra a revisão mais recente. Não há ingestão de fatos retroativos. |
 | Decaimento | não implementado | recomendação prévia permanece no histórico para cumprir “não repetir”; dados sintéticos são poucos. Em produção, crescimento monotônico exige retenção/custo medidos. |
-| Remoção | não implementada | IDs e histórico do corpus são sintéticos e não há usuário real no protótipo. Não existe fluxo de exclusão por titular. Antes de aceitar dados reais, precisa apagar/verificar histórico, episódios, FTS, preferências, chaves idempotentes, checkpoints, logs, backups e caches num único procedimento auditável. |
+| Remoção | implementada: `python src/remover_titular.py <user_id>` | Razão: privacidade. O sistema guarda, por `user_id`, o que foi recomendado e, com opt-in, o clima preferido. Apaga numa transação e depois varre de novo (ver abaixo). |
 
-O case usa apenas IDs sintéticos. Se receber dados reais, remoção verificável
-precisa ser requisito prévio de operação; não há dado sensível pessoal
-necessário à recomendação.
+### Remoção a pedido do titular: cobertura
+
+| Estrutura onde o `user_id` é gravado | O que a remoção faz | Como a varredura confere |
+|---|---|---|
+| `historico` | apaga as linhas do titular | `COUNT(*)` por `user_id` |
+| `episodios` e `episodios_fts` | apaga as linhas e o índice FTS5 | `COUNT(*)` nas duas tabelas |
+| `memoria_semantica` | apaga a preferência opt-in | `COUNT(*)` por `user_id` |
+| `acoes_idempotentes` | apaga as chaves das escritas do titular (a chave não tem `user_id`; sobra apareceria como chave órfã) | chaves sem histórico correspondente |
+| checkpoint (`dados/checkpoints.sqlite`) | `delete_thread` em toda thread cujo estado tem esse `user_id`; isso inclui argumentos de cada passo e pendências | busca dos bytes do `user_id` nas colunas `checkpoint`, `metadata` e `value` |
+| `logs/*.json` | **não apaga**: são arquivos versionados no git | o script lista em quais logs o id aparece; reescrever o histórico do repositório é decisão de quem mantém o projeto |
+| `dados/historico_seed.jsonl` | **não apaga**: é fixture e reconstrói o banco | um titular real nunca deveria estar no seed |
+| memória procedural (prompts e regras) | nada a apagar | nenhuma regra cita titular; confere-se com `grep` |
+
+O teste `test_holder_removal_clears_every_structure_and_restores_behavior` segue
+o roteiro do enunciado: grava (aprova The Office com opt-in), verifica que o
+comportamento mudou (o título não volta a ser proposto), remove, varre as
+estruturas (todas com zero) e verifica que o comportamento voltou (The Office é
+proposto de novo). Um segundo usuário gravado antes continua intacto.
+
+O índice não precisa ser reconstruído: a remoção é um `DELETE` pontual, então
+também serve à recuperação de incidente, não só à privacidade.
+
+O case usa apenas IDs sintéticos, e não há dado sensível pessoal necessário à
+recomendação.
 
 **O que não entra:** gabarito de avaliação, segredo/API key, histórico completo
 no contexto do modelo, disponibilidade externa não verificada e preferência

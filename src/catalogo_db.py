@@ -250,6 +250,66 @@ class CatalogoDB:
         self.conn.execute("DELETE FROM historico WHERE id = ?", (registro_id,))
         self.conn.commit()
 
+    def remover_titular(self, user_id: str) -> dict:
+        """Apaga o titular de todas as tabelas de memoria numa unica transacao.
+
+        A chave idempotente sai junto: se ficasse, uma nova aprovacao identica
+        responderia ja_existia=true apontando para um historico que nao existe.
+        """
+        try:
+            self.conn.execute("BEGIN IMMEDIATE")
+            removidos = {
+                "acoes_idempotentes": self.conn.execute(
+                    "DELETE FROM acoes_idempotentes WHERE history_id IN "
+                    "(SELECT id FROM historico WHERE user_id = ?)", (user_id,)).rowcount,
+                "episodios_fts": self.conn.execute(
+                    "DELETE FROM episodios_fts WHERE user_id = ?", (user_id,)).rowcount,
+                "episodios": self.conn.execute(
+                    "DELETE FROM episodios WHERE user_id = ?", (user_id,)).rowcount,
+                "memoria_semantica": self.conn.execute(
+                    "DELETE FROM memoria_semantica WHERE user_id = ?", (user_id,)).rowcount,
+                "historico": self.conn.execute(
+                    "DELETE FROM historico WHERE user_id = ?", (user_id,)).rowcount,
+            }
+            self.conn.commit()
+        except sqlite3.Error as exc:
+            self.conn.rollback()
+            raise ErroDeAcesso(f"falha ao remover titular: {exc}") from exc
+        return removidos
+
+    def volume_titular(self, user_id: str) -> dict:
+        """Linhas e bytes de texto guardados para o titular, por tabela (§5.3)."""
+        consultas = {
+            "historico": "SELECT COUNT(*), COALESCE(SUM(length(CAST(user_id || titulo || desfecho AS BLOB))), 0) "
+                         "FROM historico WHERE user_id = ?",
+            "episodios": "SELECT COUNT(*), COALESCE(SUM(length(CAST(user_id || titulo || contexto || chave AS BLOB))), 0) "
+                         "FROM episodios WHERE user_id = ?",
+            "memoria_semantica": "SELECT COUNT(*), COALESCE(SUM(length(CAST(user_id || resumo AS BLOB))), 0) "
+                                 "FROM memoria_semantica WHERE user_id = ?",
+        }
+        volume = {}
+        for tabela, sql in consultas.items():
+            linhas, tamanho = self.conn.execute(sql, (user_id,)).fetchone()
+            volume[tabela] = {"linhas": linhas, "bytes": tamanho}
+        return volume
+
+    def ocorrencias_titular(self, user_id: str) -> dict:
+        """Varredura independente da remocao: conta linhas que ainda citam o titular."""
+        return {
+            "historico": self.conn.execute(
+                "SELECT COUNT(*) FROM historico WHERE user_id = ?", (user_id,)).fetchone()[0],
+            "episodios": self.conn.execute(
+                "SELECT COUNT(*) FROM episodios WHERE user_id = ?", (user_id,)).fetchone()[0],
+            "episodios_fts": self.conn.execute(
+                "SELECT COUNT(*) FROM episodios_fts WHERE user_id = ?", (user_id,)).fetchone()[0],
+            "memoria_semantica": self.conn.execute(
+                "SELECT COUNT(*) FROM memoria_semantica WHERE user_id = ?", (user_id,)).fetchone()[0],
+            # a chave nao guarda user_id; sobra dele aparece como chave orfa
+            "acoes_idempotentes_orfas": self.conn.execute(
+                "SELECT COUNT(*) FROM acoes_idempotentes WHERE history_id NOT IN "
+                "(SELECT id FROM historico)").fetchone()[0],
+        }
+
     # ---------------- interno ----------------
 
     @staticmethod

@@ -14,10 +14,13 @@ ENTRADA
           |
           v
 +-----------------------+
-| triage                | -- chama modelo 0 ou 1 vez, JSON Pydantic validado
+| triage  [MODELO]      | -- chama modelo 0 ou 1 vez, JSON Pydantic validado
 | intenção, clima,      | -- sem API key: parser local explícito
 | referência do título  | -- SELECT do catálogo para identificar referência
 +-----------+-----------+
+  ^ DECISÃO QUE SÓ O MODELO TOMA (§3.3): ler texto livre nunca visto e dizer
+    (a) se é pedido de recomendação, (b) qual UMA tag de clima ele expressa,
+    (c) se dois climas pedidos se contradizem. Todo o resto é código.
             | condicional: código verifica rota e suficiência
             +---- finish: incompleta / ambígua / fora de escopo / referência ausente sem clima explícito
             |
@@ -123,6 +126,7 @@ informação que a pessoa forneceu, nunca com um título inventado.
 | `CatalogoDB.buscar_episodios` | leitura de memória episódica FTS5 | n/a | encontra até 3 eventos anteriores do mesmo usuário; não os trata como gosto |
 | `CatalogoDB.registrar_idempotente` | escrita SQLite | idempotente; reversão administrativa por registro | cria histórico, episódio e opt-in semântico na mesma transação |
 | `CatalogoDB.atualizar_preferencia` | escrita chave-valor | sobrescrita pela versão mais recente | só após opt-in humano `remember_preference=true` |
+| `remover_titular` (`src/remover_titular.py`) | exclusão em SQLite e checkpoint | não; é a remoção a pedido do titular | fora do grafo; operação administrativa com varredura depois |
 
 Não há laço livre de ferramentas: no máximo uma inferência de interpretação, uma
 recuperação e uma pausa. O workflow avança porque cada aresta envia o estado ao
@@ -190,7 +194,7 @@ paralelo; os demais campos têm um único escritor por etapa.
 Términos de negócio: `recommendation`, `no_match`, `clarification`,
 `out_of_scope`, `rejected`, proposta pendente (`awaiting_human`). Términos
 operacionais: limite de tempo, limite de recursão, falha/JSON inválido do modelo
-(sem fallback silencioso) e exceção de banco. Exceção de banco é fatal e sobe
+(`status=error`, sem fallback silencioso) e exceção de banco. Exceção de banco é fatal e sobe
 para o chamador; não é convertida em recusa de domínio.
 
 ## Nível de autonomia escolhido
@@ -198,7 +202,12 @@ para o chamador; não é convertida em recusa de domínio.
 O nível é **workflow com router e uma chamada de interpretação**, não agente
 com laço livre. Um workflow puramente fixo não bastava para texto livre novo,
 conflito entre referência e preferência e distinção entre pedido de
-recomendação e fora de escopo; o modelo tipado ajuda no nó `triage`. Não demos
+recomendação e fora de escopo; o modelo tipado ajuda no nó `triage`. A decisão
+concreta que só o modelo toma está marcada `[MODELO]` no diagrama: mapear uma
+frase que as regras não previram ("quero algo que me deixe inquieto") para uma
+tag de clima. As regras locais só reconhecem as palavras listadas em
+`inferir_climas`. A evidência com o sistema rodando são os casos com
+`engine=modelo` em `logs/part2_runs.json`, inclusive os que o modelo errou. Não demos
 mais autonomia que isso: SQL verifica elegibilidade, RAG fornece evidência, o
 código decide o destino das arestas e uma pessoa confirma a escrita. Sem chave,
 o parser local executa uma fatia reproduzível, e não é tratado como desempenho

@@ -2,11 +2,13 @@
 
 import operator
 import json
+import os
 import sys
 import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 from typing import Annotated, TypedDict
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,8 +23,10 @@ from graph import (  # noqa: E402
     APPROVAL_TIMEOUT_SECONDS,
     create_graph,
     expirar_pendencia,
+    remover_titular,
     resultado_publico,
     resumir,
+    varrer_pendencias,
 )
 from rag import buscar_evidencias  # noqa: E402
 
@@ -51,6 +55,11 @@ def parallel_test_graph(with_reducer=True):
 
 class TestGraphPart2(unittest.TestCase):
     def setUp(self):
+        # graph.py carrega o .env no import; sem isto, a chave local faz os
+        # testes chamarem o modelo e as asserções determinísticas quebram.
+        env_patch = mock.patch.dict(os.environ, {"OPENAI_API_KEY": ""})
+        env_patch.start()
+        self.addCleanup(env_patch.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
@@ -137,6 +146,48 @@ class TestGraphPart2(unittest.TestCase):
         self.assertEqual(resultado_publico(done)["status"], "rejected")
         with CatalogoDB(self.db_path) as db:
             self.assertEqual(db.historico("u-expired"), [])
+
+    def test_scheduler_sweep_expires_only_overdue_threads(self):
+        message = "Quero algo leve e cotidiano, para rir. Recomenda um titulo."
+        self.run_request(message, user="u-old", thread="sweep-old")
+        self.run_request(message, user="u-new", thread="sweep-new")
+        self.run_request("Qual e a previsao do tempo?", user="u-done", thread="sweep-done")
+        old = {"configurable": {"thread_id": "sweep-old"}}
+        pending = dict(self.graph.get_state(old).values["pending_action"])
+        pending["created_at"] = time.time() - APPROVAL_TIMEOUT_SECONDS - 1
+        self.graph.update_state(old, {"pending_action": pending})
+
+        self.assertEqual(varrer_pendencias(self.graph, agora=time.time()), ["sweep-old"])
+        self.assertEqual(self.graph.get_state(old).values["decision"]["status"], "rejected")
+        self.assertIn("approval", self.graph.get_state(
+            {"configurable": {"thread_id": "sweep-new"}}).next)
+        self.assertEqual(varrer_pendencias(self.graph, agora=time.time()), [])
+        with CatalogoDB(self.db_path) as db:
+            self.assertEqual(db.historico("u-old"), [])
+
+    def test_holder_removal_clears_every_structure_and_restores_behavior(self):
+        message = "Quero algo leve e cotidiano, para rir. Recomenda um titulo."
+        self.run_request(message, user="u-other", thread="rm-other")
+        resumir("rm-other", {"decision": "approve"}, self.graph)
+        first = self.run_request(message, user="u-rm", thread="rm-1")
+        self.assertEqual(resultado_publico(first)["pending_action"]["title"], "The Office")
+        resumir("rm-1", {"decision": "approve", "remember_preference": True}, self.graph)
+        # comportamento mudou: o titulo ja recomendado nao volta
+        changed = resultado_publico(self.run_request(message, user="u-rm", thread="rm-2"))
+        self.assertNotEqual(changed.get("pending_action", {}).get("title"), "The Office")
+
+        result = remover_titular("u-rm", self.graph, self.db_path)
+
+        self.assertEqual(result["removidos"]["historico"], 1)
+        self.assertEqual(result["removidos"]["checkpoint_threads"], 2)
+        self.assertEqual(set(result["varredura_depois"].values()), {0})
+        with CatalogoDB(self.db_path) as db:
+            self.assertIsNone(db.obter_preferencia("u-rm"))
+            self.assertEqual(len(db.historico("u-other")), 1)
+        self.assertIsNotNone(self.graph.get_state({"configurable": {"thread_id": "rm-other"}}).values)
+        # comportamento voltou: sem historico, o mesmo titulo pode ser proposto de novo
+        restored = resultado_publico(self.run_request(message, user="u-rm", thread="rm-3"))
+        self.assertEqual(restored["pending_action"]["title"], "The Office")
 
     def test_checkpoint_survives_saver_reopen_and_resumes(self):
         checkpoint_path = self.root / "restart-checkpoints.sqlite"

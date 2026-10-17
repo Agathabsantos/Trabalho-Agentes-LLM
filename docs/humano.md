@@ -32,10 +32,18 @@ efeito colateral antes do interrupt. O checkpointer é `SqliteSaver`, em
 Prazo declarado: **24 horas** a partir da proposta. `expirar_pendencia(thread_id)`
 é a rotina de scheduler: após o prazo, retoma com rejeição e encerra sem gravar.
 Também, se uma resposta humana tentar retomar tardiamente, o nó força rejeição.
-Não há daemon/scheduler incluído nesta prova de conceito: a execução permanece
-pendente até a aplicação chamadora/operador executar a rotina; ela nunca segue
-em silêncio. Um serviço de produção precisa agendar essa chamada e alertar o
-responsável.
+A varredura é `python src/expirar_pendencias.py`: percorre todas as threads do
+checkpointer (`varrer_pendencias`), rejeita só as vencidas e imprime em JSON os
+`thread_id` expirados. Ela é feita para rodar de hora em hora por cron ou
+systemd timer; o exemplo de crontab está no cabeçalho do script. Com execução
+horária, uma pendência fica aberta no máximo 25 horas. O teste
+`test_scheduler_sweep_expires_only_overdue_threads` cria três threads (uma
+vencida, uma dentro do prazo, uma já encerrada) e confere que só a vencida é
+rejeitada, sem escrita no histórico, e que uma segunda varredura não faz nada.
+O agendamento em si (a linha no crontab) é da máquina que hospeda o sistema e
+não está no repositório; sem ele, a pendência continua parada no checkpoint e
+nunca segue em silêncio. Alertar o responsável antes do prazo continua fora do
+protótipo.
 
 ## Idempotência da aprovação
 

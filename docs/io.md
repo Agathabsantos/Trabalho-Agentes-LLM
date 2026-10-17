@@ -14,7 +14,7 @@ uma sessão autenticada.
 
 | Campo | Tipo/valores | Uso |
 |---|---|---|
-| `status` | `recommendation`, `no_match`, `clarification`, `out_of_scope`, `rejected` | resultado tipado |
+| `status` | `recommendation`, `no_match`, `clarification`, `out_of_scope`, `rejected`, `error` | resultado tipado; `error` = a chamada ao modelo ou a validação da resposta falhou |
 | `title` | string ou `null` | só título elegível com evidência |
 | `reason` | string | justificativa sem inventar fatos |
 | `platform` | string ou `null` | plataforma da interseção da assinatura |
