@@ -73,13 +73,14 @@ semântica somente após opt-in explícito.
 `memory_written` as linhas e os bytes de texto gravados por tabela. Uma
 execução aprovada grava 1 linha em `historico`, 1 em `episodios` (mais o FTS) e,
 só com opt-in, 1 em `memoria_semantica`. Uma execução que pergunta, recusa ou é
-rejeitada grava zero. Os bytes medidos estão na tabela abaixo.
+rejeitada grava zero. Medido na demo de 2026-10-17 (commit `6c3ebf4`), nos 3
+casos aprovados (02, 03 e 06; o 01 terminou sem recomendação e não gravou):
 
 | Tabela | Linhas por execução aprovada | Bytes por linha (medido no log) |
 |---|---|---|
-| `historico` | 1 | *a preencher após `python src/demo_part2.py`* |
-| `episodios` | 1 | *a preencher* |
-| `memoria_semantica` | 0 ou 1 (opt-in) | *a preencher* | O ato de aprovar a escrita no histórico não autoriza automaticamente
+| `historico` | 1 | 27 a 31 |
+| `episodios` | 1 | 136 a 166 (mais a cópia no índice FTS5) |
+| `memoria_semantica` | 0 ou 1 (opt-in) | 53 (só no caso 06) | O ato de aprovar a escrita no histórico não autoriza automaticamente
 perfilamento semântico.
 
 ## Como a memória muda ou desaparece

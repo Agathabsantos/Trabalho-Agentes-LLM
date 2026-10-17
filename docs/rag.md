@@ -82,12 +82,14 @@ de escopo, assunto fora do corpus ou referência ausente sem clima explícito. O
 relatório guarda `retrieval_calls`. O modelo não decide chamar RAG livremente:
 essa etapa fixa protege a evidência da proposta.
 
-Nas nove demonstrações de `logs/part2_runs.json`, houve **5 chamadas** (casos
-01, 02, 03, 04 e 06) e **0 chamadas julgadas inúteis**: todas ocorreram em
-pedidos no escopo com clima suficiente; a busca vazia do caso 04 foi necessária
-para confirmar que não havia candidato elegível e não disparar ação. Os outros
-quatro casos tiveram zero chamadas. Esse é um juízo operacional nos fixtures, não
-uma medida estatística de benefício nem generalização para tráfego real.
+Nas nove demonstrações de `logs/part2_runs.json` (2026-10-17, commit
+`6c3ebf4`, com o modelo no `triage`), houve **5 chamadas** (casos 01, 02, 03, 04
+e 06) e **1 chamada inútil**: no caso 01 o modelo leu o clima errado
+(`ambiente_pesado` em vez de `mal_estar`), e a busca por esse clima não achou
+título elegível. A busca vazia do caso 04 não conta como inútil: ela confirmou
+que não havia candidato e impediu a ação. Os outros quatro casos tiveram zero
+chamadas. Esse é um juízo operacional nos fixtures, não uma medida estatística
+de benefício nem generalização para tráfego real.
 
 ## Limitações e resultado
 

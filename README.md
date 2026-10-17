@@ -47,30 +47,31 @@ uma busca de evidência e exige aprovação humana.
 
 **Texto que a pessoa digita:**
 
-> Curti Severance pelo mal-estar constante. Indica algo parecido.
+> Quero algo leve e cotidiano, para rir. Recomenda um titulo.
 
 Identidade, assinaturas, região e classificação são metadados do aplicativo
 chamador; não são parte de um formulário digitado. A saída é validada pelo
 modelo Pydantic `RecommendationResult`. Exemplo integral copiado da execução
-`01_caminho_feliz` em `logs/part2_runs.json`:
+`06_pausa_edicao_idempotencia` em `logs/part2_runs.json` (2026-10-17, commit
+`6c3ebf4`, árvore limpa, com o modelo `ministral-8b-2512` no `triage`):
 
 ```json
 {
   "status": "recommendation",
-  "title": "Dark",
-  "reason": "A avaliacao cita: ‘Sentimento de que algo esta errado o tempo todo.’",
+  "title": "The Office",
+  "reason": "Edicao humana: o trecho descreve leveza e humor cotidiano.",
   "platform": "Netflix",
-  "confidence": "medium",
+  "confidence": "high",
   "missing_info": "nenhuma",
   "next_step": "aguardar a reacao do usuario",
   "sufficient": true,
   "sources": [
     {
-      "id": "dark-review-2",
-      "title": "Dark",
-      "text": "Sentimento de que algo esta errado o tempo todo.",
-      "source": "dados/streaming_catalog.json:Dark.reviews[1]",
-      "score": 1
+      "id": "office-review-1",
+      "title": "The Office",
+      "text": "Bem leve e engracada.",
+      "source": "dados/streaming_catalog.json:The Office.reviews[0]",
+      "score": 2
     }
   ]
 }
@@ -110,13 +111,13 @@ O verificador da Parte 1 reconstrói o banco seed e apaga o histórico local do
 grafo. Rode-o apenas em uma cópia descartável, nunca enquanto houver sessões ou
 aprovações pendentes.
 
-Em 2026-10-17, a suíte rodou **20 testes** e o script gravou nove casos com
-regras locais.
-Os logs de avaliação não usam API key. O hash `4fe49e86f9415c93edf64f2dbda27921ccab3443`
-é o commit-base existente no início da execução; o arquivo registra
-`working_tree_dirty: true`, pois as mudanças da Parte 2 ainda não estavam
-commitadas. Depois de criar o commit de entrega, rode `python src/demo_part2.py`
-novamente para que o SHA reflita a árvore consolidada.
+Em 2026-10-17, a suíte rodou **20 testes** (eles rodam sem modelo mesmo com
+chave no `.env`). A demo rodou com o modelo `ministral-8b-2512` no commit
+`6c3ebf4`, com `working_tree_dirty=false`: **8 de 9 casos com o status
+esperado**. O caso 01 falhou porque o modelo leu "mal-estar" como
+`ambiente_pesado`; está registrado como falha em `docs/io.md`, sem ajuste no
+esperado. O teste A/B da frase do prompt está em `logs/ab_frase_prompt.json` e
+em `docs/prompts.md`.
 
 ## Estrutura principal
 

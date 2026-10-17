@@ -31,49 +31,51 @@ que inclui payload da ação; ainda não é uma decisão final para consumo.
 
 ## Exemplos copiados dos logs
 
-As três execuções abaixo vêm de `logs/part2_runs.json`, executadas em
-**2026-10-16**, com `source_commit=4fe49e86f9415c93edf64f2dbda27921ccab3443` e
-`working_tree_dirty=true`. Esse SHA identifica o commit pai da árvore que foi
-executada; não é apresentado como commit final do código desta entrega. Todas
-usaram `engine=regras_locais`, `model_calls=0`. Após commit da turma, regenere os
-logs para atualizar a proveniência limpa.
+As execuções abaixo vêm de `logs/part2_runs.json`, gravado em **2026-10-17**
+com `source_commit=6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e` e
+`working_tree_dirty=false`: o código que rodou é exatamente o desse commit.
+Todas usaram o modelo no nó `triage` (`engine=modelo`,
+`model_name=ministral-8b-2512`, `temperature=0.2`, `model_calls=1`).
+Resultado da demo: **8 de 9 casos com o status esperado**. O caso que falhou
+está descrito logo abaixo dos exemplos, sem ajuste no esperado.
 
 ### 1. Caminho feliz
 
-Entrada exata: `Curti Severance pelo mal-estar constante. Indica algo parecido.`
-Conta sintética: `demo-p2-01`, Netflix, 16+. Execução às
-`2026-10-16T23:47:26.613392+00:00`; log [caso 01](../logs/part2_runs.json#L1-L114).
+Entrada exata: `Quero algo leve e cotidiano, para rir. Recomenda um titulo.`
+Conta sintética: `demo-p2-06`, Netflix, 16+. Execução às
+`2026-10-17T00:47:14.588756+00:00`; log [caso 06](../logs/part2_runs.json#L514-L651).
 
 ```json
 {
   "status": "recommendation",
-  "title": "Dark",
-  "reason": "A avaliacao cita: ‘Sentimento de que algo esta errado o tempo todo.’",
+  "title": "The Office",
+  "reason": "Edicao humana: o trecho descreve leveza e humor cotidiano.",
   "platform": "Netflix",
-  "confidence": "medium",
+  "confidence": "high",
   "missing_info": "nenhuma",
   "next_step": "aguardar a reacao do usuario",
   "sufficient": true,
   "sources": [
     {
-      "id": "dark-review-2",
-      "title": "Dark",
-      "text": "Sentimento de que algo esta errado o tempo todo.",
-      "source": "dados/streaming_catalog.json:Dark.reviews[1]",
-      "score": 1
+      "id": "office-review-1",
+      "title": "The Office",
+      "text": "Bem leve e engracada.",
+      "source": "dados/streaming_catalog.json:The Office.reviews[0]",
+      "score": 2
     }
   ]
 }
 ```
 
-O resultado cita o trecho ativo de Dark e registra uma recuperação; a ação só é
-persistida após aprovação, registrada na mesma trajetória.
+O que ler ali: o modelo leu "leve" e devolveu a tag `leve`; o código achou um
+único título elegível com trecho ativo, e a recomendação cita esse trecho em
+`sources`. O `reason` é o texto editado pela pessoa na aprovação (§8.2).
 
 ### 2. Recusa por assunto fora do corpus
 
 Entrada exata: `Recomenda um filme de viagem submarina.` Conta sintética:
-`demo-p2-05`, Netflix, 16+. Execução às `2026-10-16T23:47:26.674022+00:00`;
-log [caso 05](../logs/part2_runs.json#L417-L473).
+`demo-p2-05`, Netflix, 16+. Execução às `2026-10-17T00:47:13.343988+00:00`;
+log [caso 05](../logs/part2_runs.json#L439-L513).
 
 ```json
 {
@@ -89,14 +91,15 @@ log [caso 05](../logs/part2_runs.json#L417-L473).
 }
 ```
 
-Não há chamada de recuperação porque o assunto está fora das classes locais; a
-saída declara a insuficiência e dá próximo passo útil.
+O que ler ali: o modelo devolveu `mood=null` (é assunto, não clima), e o código
+recusou sem fazer busca (`retrieval_calls=0`), com `sufficient=false` e um
+próximo passo útil.
 
 ### 3. Entrada incompleta
 
 Entrada exata: `Me indica algo parecido.` Conta sintética `demo-p2-07`, Netflix,
-16+. Execução às `2026-10-16T23:47:26.693291+00:00`; log
-[caso 07](../logs/part2_runs.json#L598-L654).
+16+. Execução às `2026-10-17T00:47:15.798087+00:00`; log
+[caso 07](../logs/part2_runs.json#L652-L726).
 
 ```json
 {
@@ -112,35 +115,46 @@ Entrada exata: `Me indica algo parecido.` Conta sintética `demo-p2-07`, Netflix
 }
 ```
 
-O pedido não é tratado como informação suficiente: o agente pergunta antes de
-fazer recuperação ou sugerir um título.
+O que ler ali: o pedido não é tratado como suficiente; o agente pergunta antes
+de buscar ou sugerir um título.
+
+### O caso que falhou com o modelo
+
+Entrada: `Curti Severance pelo mal-estar constante. Indica algo parecido.`
+Esperado: recomendação. Obtido: `no_match`; log
+[caso 01](../logs/part2_runs.json#L2-L90). O modelo escolheu a tag
+`ambiente_pesado` em vez de `mal_estar`; com essa tag não havia título elegível,
+e o sistema recusou em vez de inventar. A falha é de interpretação do modelo:
+o mesmo erro aparece em 5 de 5 chamadas no teste A/B (`docs/prompts.md`). Com
+as regras locais, este caso recomenda Dark. O resultado fica registrado como
+está; o esperado não foi alterado.
 
 ## Casos adicionais de §1.4
 
-- **Ambígua:** `Me recomenda algo leve ou intenso? Ainda nao sei.` →
-  `clarification`, exige que a pessoa escolha prioridade; log
-  [caso 08](../logs/part2_runs.json#L657-L713).
-- **Fora de escopo:** `Qual e a previsao do tempo?` → `out_of_scope`, explica que
-  recomenda títulos; log [caso 09](../logs/part2_runs.json#L716-L772).
-- **Referência inexistente e contorno seguro:** `Amei O Enigma de Kessler, quero
-  misterio e estranheza. Me recomenda algo.` A consulta registra
-  `registro_inexistente`, mas o clima explícito permite buscar The OA com fonte
-  antes de sugerir; não inventa título substituto. Log
-  [caso 03](../logs/part2_runs.json#L232-L343).
+- **Ambígua:** `Me recomenda algo leve ou intenso? Ainda nao sei.` vira
+  `clarification` e pede que a pessoa escolha a prioridade; log
+  [caso 08](../logs/part2_runs.json#L727-L801).
+- **Fora de escopo:** `Qual e a previsao do tempo?` vira `out_of_scope` e
+  explica que o agente recomenda títulos; log
+  [caso 09](../logs/part2_runs.json#L802-L876).
+- **Referência inexistente:** `Amei O Enigma de Kessler, quero misterio e
+  estranheza. Me recomenda algo.` A consulta registra `registro_inexistente`, e
+  o código segue com o clima que a própria mensagem traz (o modelo leu
+  `surreal`). Resultado: The OA, com fonte; nenhum título substituto foi
+  inventado. Log [caso 03](../logs/part2_runs.json#L222-L351).
 
 ## Pausa e idempotência (§8)
 
 Na entrada `Quero algo leve e cotidiano, para rir. Recomenda um titulo.`, a
-execução [caso 06](../logs/part2_runs.json#L478-L595) para antes de escrever. A
-pessoa aprova editando o motivo e opta por salvar preferência semântica. O log
-contém duas respostas de escrita com a mesma chave: primeira
-`gravado=true, ja_existia=false`, repetição `gravado=false, ja_existia=true`,
-ambas ID 7. Resultado final: The Office/Netflix com `sources` apontando para
-`office-review-1`.
+execução [caso 06](../logs/part2_runs.json#L514-L651) para antes de escrever. A
+pessoa aprova editando o motivo e opta por salvar a preferência semântica. O log
+contém duas respostas de escrita com a mesma chave: a primeira
+`gravado=true, ja_existia=false` e a repetição `gravado=false, ja_existia=true`,
+ambas com ID 6.
 
 ## Limites de proveniência
 
-O runner executou o grafo real em banco/checkpoint temporários; o aprovador foi
-simulado no script de demonstração. A data e o commit são do log. Essas saídas
-não são exemplo de chamada real de LLM nem evidência de catálogo de streaming
+O runner executou o grafo real em banco e checkpoint temporários; o aprovador foi
+simulado no script de demonstração. A data e o commit são do log. Os títulos,
+avaliações e plataformas são fixtures sintéticas, não catálogo de streaming
 atual.
