@@ -1,9 +1,9 @@
 [
   {
-    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
-    "working_tree_dirty": true,
+    "source_commit": "6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e",
+    "working_tree_dirty": false,
     "case_id": "01_caminho_feliz",
-    "started_at": "2026-10-16T23:47:26.613392+00:00",
+    "started_at": "2026-10-17T00:47:08.523232+00:00",
     "request": {
       "message": "Curti Severance pelo mal-estar constante. Indica algo parecido.",
       "user_id": "demo-p2-01",
@@ -16,108 +16,83 @@
       "case_id": "01_caminho_feliz"
     },
     "execution": {
-      "engine": "regras_locais",
-      "model": false,
-      "model_name": null,
+      "engine": "modelo",
+      "model": true,
+      "model_name": "ministral-8b-2512",
       "temperature": "0.2",
-      "model_calls": 0,
-      "model_output_tokens": 0,
+      "model_calls": 1,
+      "model_output_tokens": 37,
       "max_output_tokens": 300,
       "timeout_seconds": 20,
       "recursion_limit": 12,
       "prompt_sha256": {
-        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+        "interpret_request.txt": "2b53d887e63d1662bc1d28140f9930f0206655688399ae8ab51967ed8e9f9a3c"
       },
       "retrieval_calls": 1,
       "thread_id": "01_caminho_feliz"
     },
-    "paused_action": {
-      "action": "registrar_recomendacao_no_historico",
-      "title": "Dark",
-      "platform": "Netflix",
-      "reason": "A avaliacao cita: ‘Sentimento de que algo esta errado o tempo todo.’",
-      "consequence": "O titulo passara a constar como recomendado no historico deste usuario.",
-      "optional_memory": "A preferencia so sera guardada como memoria semantica se o responsavel marcar remember_preference=true.",
-      "account_owner": "demo-p2-01",
-      "created_at": 1792194446.6246183,
-      "deadline_seconds": 86400,
-      "evidence_id": "dark-review-2"
-    },
+    "paused_action": null,
     "human_response": {
       "decision": "approve"
     },
-    "write_attempts": [
-      {
-        "gravado": true,
-        "ja_existia": false,
-        "id": 4,
-        "chave_idempotencia": "c2f6691cea350f2de51f2994d3b04e02ac135c9917c1b18db909bb50273b038b"
+    "write_attempts": [],
+    "memory_written": {
+      "historico": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "episodios": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "memoria_semantica": {
+        "linhas": 0,
+        "bytes": 0
       }
-    ],
+    },
+    "expected_status": "recommendation",
+    "matches_expected": false,
     "decision": {
-      "status": "recommendation",
-      "title": "Dark",
-      "reason": "A avaliacao cita: ‘Sentimento de que algo esta errado o tempo todo.’",
-      "platform": "Netflix",
-      "confidence": "medium",
-      "missing_info": "nenhuma",
-      "next_step": "aguardar a reacao do usuario",
-      "sufficient": true,
-      "sources": [
-        {
-          "id": "dark-review-2",
-          "title": "Dark",
-          "text": "Sentimento de que algo esta errado o tempo todo.",
-          "source": "dados/streaming_catalog.json:Dark.reviews[1]",
-          "score": 1
-        }
-      ]
+      "status": "no_match",
+      "title": null,
+      "reason": "Nao encontrei evidencia ativa no corpus para um titulo compativel com assinatura, classificacao e historico.",
+      "platform": null,
+      "confidence": "low",
+      "missing_info": "um clima com evidencia no corpus ou outra assinatura",
+      "next_step": "pedir refinamento; nao relaxar filtros",
+      "sufficient": false,
+      "sources": []
     },
     "trajectory": [
       {
         "node": "triage",
-        "at": 1792194446.6212378,
+        "at": 1792198030.699817,
         "route": "retrieve",
-        "mood": "mal_estar",
+        "mood": "ambiente_pesado",
         "reference": "Severance",
         "lookup_error": null,
         "unknown_reference": null
       },
       {
         "node": "retrieve",
-        "at": 1792194446.6241615,
-        "eligible": 1,
-        "returned": 1,
+        "at": 1792198030.702545,
+        "eligible": 0,
+        "returned": 0,
         "retrieval_calls": 1
       },
       {
         "node": "propose",
-        "at": 1792194446.6246266,
-        "title": "Dark",
-        "source": "dark-review-2"
-      },
-      {
-        "node": "approval",
-        "at": 1792194446.6324463,
-        "outcome": "approved",
-        "edited": false
-      },
-      {
-        "node": "persist",
-        "at": 1792194446.6347952,
-        "gravado": true,
-        "ja_existia": false,
-        "id": 4,
-        "chave_idempotencia": "c2f6691cea350f2de51f2994d3b04e02ac135c9917c1b18db909bb50273b038b"
+        "at": 1792198030.7029643,
+        "result": "no_match"
       }
     ],
-    "finished_at": "2026-10-16T23:47:26.636336+00:00"
+    "finished_at": "2026-10-17T00:47:10.706282+00:00"
   },
   {
-    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
-    "working_tree_dirty": true,
+    "source_commit": "6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e",
+    "working_tree_dirty": false,
     "case_id": "02_divergencia",
-    "started_at": "2026-10-16T23:47:26.636354+00:00",
+    "started_at": "2026-10-17T00:47:10.706295+00:00",
     "request": {
       "message": "Quero algo leve e sem ficar pensando demais. Me lembra Severance?",
       "user_id": "demo-p2-02",
@@ -131,17 +106,17 @@
       "case_id": "02_divergencia"
     },
     "execution": {
-      "engine": "regras_locais",
-      "model": false,
-      "model_name": null,
+      "engine": "modelo",
+      "model": true,
+      "model_name": "ministral-8b-2512",
       "temperature": "0.2",
-      "model_calls": 0,
-      "model_output_tokens": 0,
+      "model_calls": 1,
+      "model_output_tokens": 34,
       "max_output_tokens": 300,
       "timeout_seconds": 20,
       "recursion_limit": 12,
       "prompt_sha256": {
-        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+        "interpret_request.txt": "2b53d887e63d1662bc1d28140f9930f0206655688399ae8ab51967ed8e9f9a3c"
       },
       "retrieval_calls": 1,
       "thread_id": "02_divergencia"
@@ -154,7 +129,7 @@
       "consequence": "O titulo passara a constar como recomendado no historico deste usuario.",
       "optional_memory": "A preferencia so sera guardada como memoria semantica se o responsavel marcar remember_preference=true.",
       "account_owner": "demo-p2-02",
-      "created_at": 1792194446.641265,
+      "created_at": 1792198031.642942,
       "deadline_seconds": 86400,
       "evidence_id": "office-review-1"
     },
@@ -165,10 +140,26 @@
       {
         "gravado": true,
         "ja_existia": false,
-        "id": 5,
+        "id": 4,
         "chave_idempotencia": "b7729665eaf6b8c1c76fb09247e648553be416275615687821be12715e224941"
       }
     ],
+    "memory_written": {
+      "historico": {
+        "linhas": 1,
+        "bytes": 31
+      },
+      "episodios": {
+        "linhas": 1,
+        "bytes": 136
+      },
+      "memoria_semantica": {
+        "linhas": 0,
+        "bytes": 0
+      }
+    },
+    "expected_status": "recommendation",
+    "matches_expected": true,
     "decision": {
       "status": "recommendation",
       "title": "The Office",
@@ -191,7 +182,7 @@
     "trajectory": [
       {
         "node": "triage",
-        "at": 1792194446.638768,
+        "at": 1792198031.6393328,
         "route": "retrieve",
         "mood": "leve",
         "reference": "Severance",
@@ -200,39 +191,39 @@
       },
       {
         "node": "retrieve",
-        "at": 1792194446.6405704,
+        "at": 1792198031.641632,
         "eligible": 1,
         "returned": 1,
         "retrieval_calls": 1
       },
       {
         "node": "propose",
-        "at": 1792194446.6412735,
+        "at": 1792198031.6429431,
         "title": "The Office",
         "source": "office-review-1"
       },
       {
         "node": "approval",
-        "at": 1792194446.6484885,
+        "at": 1792198031.647997,
         "outcome": "approved",
         "edited": false
       },
       {
         "node": "persist",
-        "at": 1792194446.6499503,
+        "at": 1792198031.6518497,
         "gravado": true,
         "ja_existia": false,
-        "id": 5,
+        "id": 4,
         "chave_idempotencia": "b7729665eaf6b8c1c76fb09247e648553be416275615687821be12715e224941"
       }
     ],
-    "finished_at": "2026-10-16T23:47:26.651568+00:00"
+    "finished_at": "2026-10-17T00:47:11.654465+00:00"
   },
   {
-    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
-    "working_tree_dirty": true,
+    "source_commit": "6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e",
+    "working_tree_dirty": false,
     "case_id": "03_registro_inexistente",
-    "started_at": "2026-10-16T23:47:26.651587+00:00",
+    "started_at": "2026-10-17T00:47:11.654476+00:00",
     "request": {
       "message": "Amei O Enigma de Kessler, quero misterio e estranheza. Me recomenda algo.",
       "user_id": "demo-p2-03",
@@ -245,17 +236,17 @@
       "case_id": "03_registro_inexistente"
     },
     "execution": {
-      "engine": "regras_locais",
-      "model": false,
-      "model_name": null,
+      "engine": "modelo",
+      "model": true,
+      "model_name": "ministral-8b-2512",
       "temperature": "0.2",
-      "model_calls": 0,
-      "model_output_tokens": 0,
+      "model_calls": 1,
+      "model_output_tokens": 34,
       "max_output_tokens": 300,
       "timeout_seconds": 20,
       "recursion_limit": 12,
       "prompt_sha256": {
-        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+        "interpret_request.txt": "2b53d887e63d1662bc1d28140f9930f0206655688399ae8ab51967ed8e9f9a3c"
       },
       "retrieval_calls": 1,
       "thread_id": "03_registro_inexistente"
@@ -268,7 +259,7 @@
       "consequence": "O titulo passara a constar como recomendado no historico deste usuario.",
       "optional_memory": "A preferencia so sera guardada como memoria semantica se o responsavel marcar remember_preference=true.",
       "account_owner": "demo-p2-03",
-      "created_at": 1792194446.656867,
+      "created_at": 1792198032.498908,
       "deadline_seconds": 86400,
       "evidence_id": "oa-review-2"
     },
@@ -279,10 +270,26 @@
       {
         "gravado": true,
         "ja_existia": false,
-        "id": 6,
-        "chave_idempotencia": "875cb1a2d3639e75f87a40293f03f696823b68e1c3540c5d46bebf7f6d5f85eb"
+        "id": 5,
+        "chave_idempotencia": "a7add42c11e5d234123408b5c4ea0e5dc6268327ba2c546e1f865e51fa4cda11"
       }
     ],
+    "memory_written": {
+      "historico": {
+        "linhas": 1,
+        "bytes": 27
+      },
+      "episodios": {
+        "linhas": 1,
+        "bytes": 166
+      },
+      "memoria_semantica": {
+        "linhas": 0,
+        "bytes": 0
+      }
+    },
+    "expected_status": "recommendation",
+    "matches_expected": true,
     "decision": {
       "status": "recommendation",
       "title": "The OA",
@@ -305,48 +312,48 @@
     "trajectory": [
       {
         "node": "triage",
-        "at": 1792194446.6548083,
+        "at": 1792198032.4962015,
         "route": "retrieve",
-        "mood": "misterio",
+        "mood": "surreal",
         "reference": null,
         "lookup_error": "registro_inexistente",
         "unknown_reference": "O Enigma de Kessler"
       },
       {
         "node": "retrieve",
-        "at": 1792194446.6564367,
-        "eligible": 2,
-        "returned": 2,
+        "at": 1792198032.4985242,
+        "eligible": 1,
+        "returned": 1,
         "retrieval_calls": 1
       },
       {
         "node": "propose",
-        "at": 1792194446.6568758,
+        "at": 1792198032.4989095,
         "title": "The OA",
         "source": "oa-review-2"
       },
       {
         "node": "approval",
-        "at": 1792194446.660568,
+        "at": 1792198032.5046906,
         "outcome": "approved",
         "edited": false
       },
       {
         "node": "persist",
-        "at": 1792194446.66482,
+        "at": 1792198032.5082095,
         "gravado": true,
         "ja_existia": false,
-        "id": 6,
-        "chave_idempotencia": "875cb1a2d3639e75f87a40293f03f696823b68e1c3540c5d46bebf7f6d5f85eb"
+        "id": 5,
+        "chave_idempotencia": "a7add42c11e5d234123408b5c4ea0e5dc6268327ba2c546e1f865e51fa4cda11"
       }
     ],
-    "finished_at": "2026-10-16T23:47:26.666748+00:00"
+    "finished_at": "2026-10-17T00:47:12.510962+00:00"
   },
   {
-    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
-    "working_tree_dirty": true,
+    "source_commit": "6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e",
+    "working_tree_dirty": false,
     "case_id": "04_nao_dispara_acao",
-    "started_at": "2026-10-16T23:47:26.666767+00:00",
+    "started_at": "2026-10-17T00:47:12.510973+00:00",
     "request": {
       "message": "Quero algo intenso e estranho, tipo Severance.",
       "user_id": "demo-p2-04",
@@ -359,17 +366,17 @@
       "case_id": "04_nao_dispara_acao"
     },
     "execution": {
-      "engine": "regras_locais",
-      "model": false,
-      "model_name": null,
+      "engine": "modelo",
+      "model": true,
+      "model_name": "ministral-8b-2512",
       "temperature": "0.2",
-      "model_calls": 0,
-      "model_output_tokens": 0,
+      "model_calls": 1,
+      "model_output_tokens": 34,
       "max_output_tokens": 300,
       "timeout_seconds": 20,
       "recursion_limit": 12,
       "prompt_sha256": {
-        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+        "interpret_request.txt": "2b53d887e63d1662bc1d28140f9930f0206655688399ae8ab51967ed8e9f9a3c"
       },
       "retrieval_calls": 1,
       "thread_id": "04_nao_dispara_acao"
@@ -377,6 +384,22 @@
     "paused_action": null,
     "human_response": null,
     "write_attempts": [],
+    "memory_written": {
+      "historico": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "episodios": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "memoria_semantica": {
+        "linhas": 0,
+        "bytes": 0
+      }
+    },
+    "expected_status": "no_match",
+    "matches_expected": true,
     "decision": {
       "status": "no_match",
       "title": null,
@@ -391,7 +414,7 @@
     "trajectory": [
       {
         "node": "triage",
-        "at": 1792194446.669075,
+        "at": 1792198033.335562,
         "route": "retrieve",
         "mood": "surreal",
         "reference": "Severance",
@@ -400,24 +423,24 @@
       },
       {
         "node": "retrieve",
-        "at": 1792194446.6706877,
+        "at": 1792198033.337316,
         "eligible": 0,
         "returned": 0,
         "retrieval_calls": 1
       },
       {
         "node": "propose",
-        "at": 1792194446.6711388,
+        "at": 1792198033.3376665,
         "result": "no_match"
       }
     ],
-    "finished_at": "2026-10-16T23:47:26.674005+00:00"
+    "finished_at": "2026-10-17T00:47:13.343978+00:00"
   },
   {
-    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
-    "working_tree_dirty": true,
+    "source_commit": "6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e",
+    "working_tree_dirty": false,
     "case_id": "05_fora_do_corpus",
-    "started_at": "2026-10-16T23:47:26.674022+00:00",
+    "started_at": "2026-10-17T00:47:13.343988+00:00",
     "request": {
       "message": "Recomenda um filme de viagem submarina.",
       "user_id": "demo-p2-05",
@@ -430,17 +453,17 @@
       "case_id": "05_fora_do_corpus"
     },
     "execution": {
-      "engine": "regras_locais",
-      "model": false,
-      "model_name": null,
+      "engine": "modelo",
+      "model": true,
+      "model_name": "ministral-8b-2512",
       "temperature": "0.2",
-      "model_calls": 0,
-      "model_output_tokens": 0,
+      "model_calls": 1,
+      "model_output_tokens": 40,
       "max_output_tokens": 300,
       "timeout_seconds": 20,
       "recursion_limit": 12,
       "prompt_sha256": {
-        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+        "interpret_request.txt": "2b53d887e63d1662bc1d28140f9930f0206655688399ae8ab51967ed8e9f9a3c"
       },
       "retrieval_calls": 0,
       "thread_id": "05_fora_do_corpus"
@@ -448,6 +471,22 @@
     "paused_action": null,
     "human_response": null,
     "write_attempts": [],
+    "memory_written": {
+      "historico": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "episodios": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "memoria_semantica": {
+        "linhas": 0,
+        "bytes": 0
+      }
+    },
+    "expected_status": "no_match",
+    "matches_expected": true,
     "decision": {
       "status": "no_match",
       "title": null,
@@ -462,7 +501,7 @@
     "trajectory": [
       {
         "node": "triage",
-        "at": 1792194446.6768115,
+        "at": 1792198034.585846,
         "route": "finish",
         "mood": null,
         "reference": null,
@@ -470,13 +509,13 @@
         "unknown_reference": null
       }
     ],
-    "finished_at": "2026-10-16T23:47:26.681005+00:00"
+    "finished_at": "2026-10-17T00:47:14.588746+00:00"
   },
   {
-    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
-    "working_tree_dirty": true,
+    "source_commit": "6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e",
+    "working_tree_dirty": false,
     "case_id": "06_pausa_edicao_idempotencia",
-    "started_at": "2026-10-16T23:47:26.681025+00:00",
+    "started_at": "2026-10-17T00:47:14.588756+00:00",
     "request": {
       "message": "Quero algo leve e cotidiano, para rir. Recomenda um titulo.",
       "user_id": "demo-p2-06",
@@ -489,17 +528,17 @@
       "case_id": "06_pausa_edicao_idempotencia"
     },
     "execution": {
-      "engine": "regras_locais",
-      "model": false,
-      "model_name": null,
+      "engine": "modelo",
+      "model": true,
+      "model_name": "ministral-8b-2512",
       "temperature": "0.2",
-      "model_calls": 0,
-      "model_output_tokens": 0,
+      "model_calls": 1,
+      "model_output_tokens": 34,
       "max_output_tokens": 300,
       "timeout_seconds": 20,
       "recursion_limit": 12,
       "prompt_sha256": {
-        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+        "interpret_request.txt": "2b53d887e63d1662bc1d28140f9930f0206655688399ae8ab51967ed8e9f9a3c"
       },
       "retrieval_calls": 1,
       "thread_id": "06_pausa_edicao_idempotencia"
@@ -512,7 +551,7 @@
       "consequence": "O titulo passara a constar como recomendado no historico deste usuario.",
       "optional_memory": "A preferencia so sera guardada como memoria semantica se o responsavel marcar remember_preference=true.",
       "account_owner": "demo-p2-06",
-      "created_at": 1792194446.6861253,
+      "created_at": 1792198035.7862513,
       "deadline_seconds": 86400,
       "evidence_id": "office-review-1"
     },
@@ -525,16 +564,32 @@
       {
         "gravado": true,
         "ja_existia": false,
-        "id": 7,
+        "id": 6,
         "chave_idempotencia": "d1f86e007ca115b50f9f853e2bc615c9b763ff3d254830cb3780010918b72cea"
       },
       {
         "gravado": false,
         "ja_existia": true,
-        "id": 7,
+        "id": 6,
         "chave_idempotencia": "d1f86e007ca115b50f9f853e2bc615c9b763ff3d254830cb3780010918b72cea"
       }
     ],
+    "memory_written": {
+      "historico": {
+        "linhas": 1,
+        "bytes": 31
+      },
+      "episodios": {
+        "linhas": 1,
+        "bytes": 149
+      },
+      "memoria_semantica": {
+        "linhas": 1,
+        "bytes": 53
+      }
+    },
+    "expected_status": "recommendation",
+    "matches_expected": true,
     "decision": {
       "status": "recommendation",
       "title": "The Office",
@@ -557,7 +612,7 @@
     "trajectory": [
       {
         "node": "triage",
-        "at": 1792194446.6837664,
+        "at": 1792198035.783448,
         "route": "retrieve",
         "mood": "leve",
         "reference": null,
@@ -566,39 +621,39 @@
       },
       {
         "node": "retrieve",
-        "at": 1792194446.6857073,
+        "at": 1792198035.785927,
         "eligible": 1,
         "returned": 1,
         "retrieval_calls": 1
       },
       {
         "node": "propose",
-        "at": 1792194446.6861343,
+        "at": 1792198035.7862525,
         "title": "The Office",
         "source": "office-review-1"
       },
       {
         "node": "approval",
-        "at": 1792194446.6907,
+        "at": 1792198035.791514,
         "outcome": "approved",
         "edited": true
       },
       {
         "node": "persist",
-        "at": 1792194446.6920657,
+        "at": 1792198035.7946198,
         "gravado": true,
         "ja_existia": false,
-        "id": 7,
+        "id": 6,
         "chave_idempotencia": "d1f86e007ca115b50f9f853e2bc615c9b763ff3d254830cb3780010918b72cea"
       }
     ],
-    "finished_at": "2026-10-16T23:47:26.693219+00:00"
+    "finished_at": "2026-10-17T00:47:15.798074+00:00"
   },
   {
-    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
-    "working_tree_dirty": true,
+    "source_commit": "6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e",
+    "working_tree_dirty": false,
     "case_id": "07_entrada_incompleta",
-    "started_at": "2026-10-16T23:47:26.693291+00:00",
+    "started_at": "2026-10-17T00:47:15.798087+00:00",
     "request": {
       "message": "Me indica algo parecido.",
       "user_id": "demo-p2-07",
@@ -611,17 +666,17 @@
       "case_id": "07_entrada_incompleta"
     },
     "execution": {
-      "engine": "regras_locais",
-      "model": false,
-      "model_name": null,
+      "engine": "modelo",
+      "model": true,
+      "model_name": "ministral-8b-2512",
       "temperature": "0.2",
-      "model_calls": 0,
-      "model_output_tokens": 0,
+      "model_calls": 1,
+      "model_output_tokens": 42,
       "max_output_tokens": 300,
       "timeout_seconds": 20,
       "recursion_limit": 12,
       "prompt_sha256": {
-        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+        "interpret_request.txt": "2b53d887e63d1662bc1d28140f9930f0206655688399ae8ab51967ed8e9f9a3c"
       },
       "retrieval_calls": 0,
       "thread_id": "07_entrada_incompleta"
@@ -629,6 +684,22 @@
     "paused_action": null,
     "human_response": null,
     "write_attempts": [],
+    "memory_written": {
+      "historico": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "episodios": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "memoria_semantica": {
+        "linhas": 0,
+        "bytes": 0
+      }
+    },
+    "expected_status": "clarification",
+    "matches_expected": true,
     "decision": {
       "status": "clarification",
       "title": null,
@@ -643,7 +714,7 @@
     "trajectory": [
       {
         "node": "triage",
-        "at": 1792194446.6982927,
+        "at": 1792198036.9376054,
         "route": "finish",
         "mood": null,
         "reference": null,
@@ -651,13 +722,13 @@
         "unknown_reference": null
       }
     ],
-    "finished_at": "2026-10-16T23:47:26.700987+00:00"
+    "finished_at": "2026-10-17T00:47:16.940624+00:00"
   },
   {
-    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
-    "working_tree_dirty": true,
+    "source_commit": "6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e",
+    "working_tree_dirty": false,
     "case_id": "08_entrada_ambigua",
-    "started_at": "2026-10-16T23:47:26.701076+00:00",
+    "started_at": "2026-10-17T00:47:16.940633+00:00",
     "request": {
       "message": "Me recomenda algo leve ou intenso? Ainda nao sei.",
       "user_id": "demo-p2-08",
@@ -670,17 +741,17 @@
       "case_id": "08_entrada_ambigua"
     },
     "execution": {
-      "engine": "regras_locais",
-      "model": false,
-      "model_name": null,
+      "engine": "modelo",
+      "model": true,
+      "model_name": "ministral-8b-2512",
       "temperature": "0.2",
-      "model_calls": 0,
-      "model_output_tokens": 0,
+      "model_calls": 1,
+      "model_output_tokens": 40,
       "max_output_tokens": 300,
       "timeout_seconds": 20,
       "recursion_limit": 12,
       "prompt_sha256": {
-        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+        "interpret_request.txt": "2b53d887e63d1662bc1d28140f9930f0206655688399ae8ab51967ed8e9f9a3c"
       },
       "retrieval_calls": 0,
       "thread_id": "08_entrada_ambigua"
@@ -688,6 +759,22 @@
     "paused_action": null,
     "human_response": null,
     "write_attempts": [],
+    "memory_written": {
+      "historico": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "episodios": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "memoria_semantica": {
+        "linhas": 0,
+        "bytes": 0
+      }
+    },
+    "expected_status": "clarification",
+    "matches_expected": true,
     "decision": {
       "status": "clarification",
       "title": null,
@@ -702,7 +789,7 @@
     "trajectory": [
       {
         "node": "triage",
-        "at": 1792194446.7035248,
+        "at": 1792198038.3719099,
         "route": "finish",
         "mood": null,
         "reference": null,
@@ -710,13 +797,13 @@
         "unknown_reference": null
       }
     ],
-    "finished_at": "2026-10-16T23:47:26.706567+00:00"
+    "finished_at": "2026-10-17T00:47:18.375013+00:00"
   },
   {
-    "source_commit": "4fe49e86f9415c93edf64f2dbda27921ccab3443",
-    "working_tree_dirty": true,
+    "source_commit": "6c3ebf4a2a663ebe3ae3b1e6acc5bc66625d3a7e",
+    "working_tree_dirty": false,
     "case_id": "09_fora_de_escopo",
-    "started_at": "2026-10-16T23:47:26.706582+00:00",
+    "started_at": "2026-10-17T00:47:18.375022+00:00",
     "request": {
       "message": "Qual e a previsao do tempo?",
       "user_id": "demo-p2-09",
@@ -729,17 +816,17 @@
       "case_id": "09_fora_de_escopo"
     },
     "execution": {
-      "engine": "regras_locais",
-      "model": false,
-      "model_name": null,
+      "engine": "modelo",
+      "model": true,
+      "model_name": "ministral-8b-2512",
       "temperature": "0.2",
-      "model_calls": 0,
-      "model_output_tokens": 0,
+      "model_calls": 1,
+      "model_output_tokens": 32,
       "max_output_tokens": 300,
       "timeout_seconds": 20,
       "recursion_limit": 12,
       "prompt_sha256": {
-        "interpret_request.txt": "bd601d89d97f3915989e4129cd3ca3c28b228f352419ba7b828b7e4ffdff3374"
+        "interpret_request.txt": "2b53d887e63d1662bc1d28140f9930f0206655688399ae8ab51967ed8e9f9a3c"
       },
       "retrieval_calls": 0,
       "thread_id": "09_fora_de_escopo"
@@ -747,6 +834,22 @@
     "paused_action": null,
     "human_response": null,
     "write_attempts": [],
+    "memory_written": {
+      "historico": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "episodios": {
+        "linhas": 0,
+        "bytes": 0
+      },
+      "memoria_semantica": {
+        "linhas": 0,
+        "bytes": 0
+      }
+    },
+    "expected_status": "out_of_scope",
+    "matches_expected": true,
     "decision": {
       "status": "out_of_scope",
       "title": null,
@@ -761,7 +864,7 @@
     "trajectory": [
       {
         "node": "triage",
-        "at": 1792194446.7089267,
+        "at": 1792198039.148558,
         "route": "finish",
         "mood": null,
         "reference": null,
@@ -769,6 +872,6 @@
         "unknown_reference": null
       }
     ],
-    "finished_at": "2026-10-16T23:47:26.714491+00:00"
+    "finished_at": "2026-10-17T00:47:19.151310+00:00"
   }
 ]
