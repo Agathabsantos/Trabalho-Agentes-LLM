@@ -20,15 +20,19 @@ from graph import APPROVAL_TIMEOUT_SECONDS, fechar_graph, get_graph, varrer_pend
 
 def main() -> None:
     graph = get_graph()
+    falhas = []
     try:
-        expiradas = varrer_pendencias(graph)
+        expiradas = varrer_pendencias(graph, falhas=falhas)
     finally:
         fechar_graph()
     print(json.dumps({
         "executado_em": datetime.now(timezone.utc).isoformat(),
         "prazo_segundos": APPROVAL_TIMEOUT_SECONDS,
         "threads_expiradas": expiradas,
+        "threads_com_falha": falhas,
     }, ensure_ascii=False))
+    if falhas:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

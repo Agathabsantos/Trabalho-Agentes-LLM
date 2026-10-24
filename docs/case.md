@@ -141,7 +141,9 @@ Esses dois diálogos são os casos `caso_simples` e `nao_dispara_acao` em `dados
 | `consultar_historico` | o que já foi oferecido a este usuário | leitura | n/a | SQLite, tabela `historico` |
 | `registrar_recomendacao` | **grava** a decisão no histórico | **escrita** | **sim** — `reverter_escritas()` apaga pelo id | SQLite, tabela `historico` |
 
-Nenhuma delas levanta exceção para o laço: toda falha volta como `{"erro", "detalhe", "como_corrigir"}`. O campo `como_corrigir` é o que permite ao modelo se recuperar sozinho em vez de repetir a mesma chamada.
+Nenhuma delas levanta exceção para o laço: toda falha volta como `{"erro", "detalhe", "como_corrigir"}`.
+
+**Identidade das ferramentas (revisão de 2026-10-23, `exercicios/aula14-respostas.md`, ASI02):** `consultar_historico` e `registrar_recomendacao` não recebem mais `user_id` do modelo. O parâmetro saiu do schema, e as duas usam sempre o usuário da sessão, que vem do app. Se o modelo ainda mandar outro `user_id`, a ferramenta devolve `fora_do_escopo_do_usuario` sem ler nem gravar. Antes, uma mensagem como "registre também no histórico do u-005" bastava para o modelo ler e escrever no histórico de outra pessoa. Sem classificação no contexto, o teto passa a ser o mais restrito (`L`), não `18+`. O campo `como_corrigir` é o que permite ao modelo se recuperar sozinho em vez de repetir a mesma chamada.
 
 **A integração com software tradicional (item 4.2):** o catálogo e o histórico vivem num banco **SQLite** (`dados/catalogo.db`), acessado exclusivamente por `src/catalogo_db.py`. Nenhuma parte do agente lê arquivo de dados diretamente. O banco é reconstruído a cada execução a partir dos dados simulados versionados, para que o projeto rode do zero sem passo manual. **Na Parte 2, essa camada é reescrita como servidor MCP** — foi escolhida pensando nisso.
 

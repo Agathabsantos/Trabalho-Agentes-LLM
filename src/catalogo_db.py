@@ -24,6 +24,15 @@ HISTORICO_SEED = ROOT / "dados" / "historico_seed.jsonl"
 ORDEM_CLASSIFICACAO = {"L": 0, "10+": 10, "12+": 12, "14+": 14, "16+": 16, "18+": 18}
 
 
+def teto_classificacao(valor) -> int:
+    """Teto do perfil. Sem valor valido vale o mais restrito (L): falha fechada.
+
+    Antes o padrao era 18+, e um app que esquecesse de mandar a classificacao
+    de um perfil infantil liberava conteudo adulto (ASI03, exercicios/aula14).
+    """
+    return ORDEM_CLASSIFICACAO.get(valor, 0)
+
+
 class RegistroNaoEncontrado(Exception):
     """O identificador pedido nao existe no banco."""
 
@@ -109,7 +118,7 @@ class CatalogoDB:
         A pontuacao e o numero de tags de clima do titulo presentes no texto do
         pedido. Ordenacao deterministica: pontuacao desc, depois titulo asc.
         """
-        teto = ORDEM_CLASSIFICACAO.get(classificacao_max, 18)
+        teto = teto_classificacao(classificacao_max)
         excluir_lower = {e.lower() for e in excluir}
         assinadas = set(plataformas or [])
         resultados = []

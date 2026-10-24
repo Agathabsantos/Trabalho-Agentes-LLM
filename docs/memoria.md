@@ -110,6 +110,10 @@ comportamento mudou (o título não volta a ser proposto), remove, varre as
 estruturas (todas com zero) e verifica que o comportamento voltou (The Office é
 proposto de novo). Um segundo usuário gravado antes continua intacto.
 
+A ordem importa: primeiro a transação SQLite, depois o checkpoint. Se o SQLite
+falhar, nada saiu e o pedido pode ser repetido; na ordem inversa, o checkpoint
+sumia e o histórico ficava.
+
 O índice não precisa ser reconstruído: a remoção é um `DELETE` pontual, então
 também serve à recuperação de incidente, não só à privacidade.
 

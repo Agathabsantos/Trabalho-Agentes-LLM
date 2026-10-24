@@ -19,8 +19,11 @@ Atualizado em 2026-10-17. A Parte 1 e mantida como baseline nos arquivos
 
 ## Verificação
 
-A última execução (Python 3.14.7, 2026-10-17) validou 20 testes, que rodam sem
-modelo mesmo com chave no `.env`. A demo
+A última execução (Python 3.14.7, 2026-10-17) validou 24 testes, que rodam sem
+modelo mesmo com chave no `.env`. Em 2026-10-23 entraram as mitigações de
+segurança do exercício 14 (`exercicios/aula14-respostas.md`): ferramentas presas
+ao usuário da sessão, classificação ausente vale `L`, `thread_id` aleatório no
+CLI e varredura de expiração isolada por thread. A demo
 (`python src/demo_part2.py`) rodou com `ministral-8b-2512` no commit `6c3ebf4`,
 com `working_tree_dirty=false`; o A/B da frase rodou no commit `1d421e1`; a
 topologia foi conferida por `python conferir_grafo.py`.

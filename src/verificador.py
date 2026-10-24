@@ -23,7 +23,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from catalogo_db import CatalogoDB, ORDEM_CLASSIFICACAO, construir_banco  # noqa: E402
+from catalogo_db import CatalogoDB, ORDEM_CLASSIFICACAO, construir_banco, teto_classificacao  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 CASES_PATH = ROOT / "dados" / "cases.json"
@@ -63,7 +63,7 @@ def verificar_invariantes(caso, decisao, catalogo, historico):
             f"'{titulo}' esta em {item['plataformas']}, usuario assina {sorted(assinadas)}"
         )
 
-    teto = ORDEM_CLASSIFICACAO.get(caso.get("max_rating", "18+"), 18)
+    teto = teto_classificacao(caso.get("max_rating"))
     if ORDEM_CLASSIFICACAO.get(item["classificacao"], 18) > teto:
         violacoes.append(
             f"'{titulo}' e {item['classificacao']}, perfil aceita ate {caso.get('max_rating')}"

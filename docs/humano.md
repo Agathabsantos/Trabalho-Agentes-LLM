@@ -36,7 +36,11 @@ A varredura é `python src/expirar_pendencias.py`: percorre todas as threads do
 checkpointer (`varrer_pendencias`), rejeita só as vencidas e imprime em JSON os
 `thread_id` expirados. Ela é feita para rodar de hora em hora por cron ou
 systemd timer; o exemplo de crontab está no cabeçalho do script. Com execução
-horária, uma pendência fica aberta no máximo 25 horas. O teste
+horária, uma pendência fica aberta no máximo 25 horas. Uma thread que falha (checkpoint corrompido ou
+ilegível) é registrada em `threads_com_falha` e a varredura segue para as outras;
+o script termina com código 1 para o cron alertar. O teste
+`test_sweep_survives_a_corrupted_thread` insere um checkpoint inválido antes da
+thread vencida e confere que ela expira mesmo assim. O teste
 `test_scheduler_sweep_expires_only_overdue_threads` cria três threads (uma
 vencida, uma dentro do prazo, uma já encerrada) e confere que só a vencida é
 rejeitada, sem escrita no histórico, e que uma segunda varredura não faz nada.

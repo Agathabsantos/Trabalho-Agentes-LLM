@@ -15,6 +15,7 @@ import re
 import sys
 import time
 import unicodedata
+import uuid
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal, TypedDict
@@ -43,6 +44,7 @@ from catalogo_db import (  # noqa: E402
     RegistroNaoEncontrado,
     construir_banco,
     normalizar,
+    teto_classificacao,
 )
 from rag import buscar_evidencias  # noqa: E402
 
@@ -381,7 +383,7 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
             matches = db.buscar_por_clima(
                 termos_normalizados=normalizar(state["mood"]),
                 plataformas=state.get("subscriptions", []),
-                classificacao_max=state.get("max_rating", "18+"),
+                classificacao_max=state.get("max_rating"),
                 excluir=excluded,
             )
         eligible = {candidate["titulo"] for candidate in matches}
@@ -465,7 +467,7 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
         with CatalogoDB(db_path) as db:
             item = db.obter_titulo(title)
         subscriptions = set(state.get("subscriptions", []))
-        rating_limit = ORDEM_CLASSIFICACAO.get(state.get("max_rating", "18+"), 18)
+        rating_limit = teto_classificacao(state.get("max_rating"))
         if platform not in subscriptions or platform not in item["plataformas"]:
             valid = False
         else:
@@ -602,17 +604,34 @@ def expirar_pendencia(thread_id: str, graph=None, agora: float | None = None):
     }), config={**config, "recursion_limit": MAX_NODES})
 
 
-def varrer_pendencias(graph=None, agora: float | None = None) -> list[str]:
+def varrer_pendencias(graph=None, agora: float | None = None,
+                      falhas: list[dict] | None = None) -> list[str]:
     """Percorre todas as threads do checkpointer e expira as vencidas.
 
     E o que o agendador externo (cron, systemd timer) chama; devolve os
-    thread_ids rejeitados por prazo para o log de operacao.
+    thread_ids rejeitados por prazo para o log de operacao. Uma thread que
+    falha (checkpoint corrompido, versao incompativel) vai para `falhas` e a
+    varredura segue: sem isso, uma unica thread quebrada impedia a expiracao
+    de todas as outras (ASI08, exercicios/aula14).
     """
     graph = graph or get_graph()
-    thread_ids = sorted({item.config["configurable"]["thread_id"]
-                         for item in graph.checkpointer.list(None)})
-    return [thread_id for thread_id in thread_ids
-            if expirar_pendencia(thread_id, graph, agora) is not None]
+    # IDs pela tabela, sem desserializar: listar pelo checkpointer ja quebraria
+    # na thread corrompida, antes do laco.
+    thread_ids = [row[0] for row in graph.checkpointer.conn.execute(
+        "SELECT DISTINCT thread_id FROM checkpoints ORDER BY thread_id")]
+    expiradas, erros = [], []
+    for thread_id in thread_ids:
+        try:
+            if expirar_pendencia(thread_id, graph, agora) is not None:
+                expiradas.append(thread_id)
+        except Exception as exc:
+            erros.append({"thread_id": thread_id, "erro": type(exc).__name__})
+    if falhas is None and erros:
+        # quem nao pediu a lista recebe a falha, depois de as outras threads expirarem
+        raise RuntimeError(f"varredura concluida com threads ilegiveis: {erros}")
+    if falhas is not None:
+        falhas.extend(erros)
+    return expiradas
 
 
 def resultado_publico(state: dict) -> dict:
@@ -651,10 +670,13 @@ def remover_titular(user_id: str, graph=None, db_path: Path = DB_PATH) -> dict:
     """
     graph = graph or get_graph()
     threads = _threads_com_titular(graph, user_id)
+    # SQLite primeiro, porque e transacional: se falhar, nada saiu e o pedido
+    # pode ser repetido. Apagar o checkpoint antes deixava remocao pela metade.
+    with CatalogoDB(db_path) as db:
+        removidos = db.remover_titular(user_id)
     for thread_id in threads:
         graph.checkpointer.delete_thread(thread_id)
     with CatalogoDB(db_path) as db:
-        removidos = db.remover_titular(user_id)
         restante = db.ocorrencias_titular(user_id)
     restante["checkpoint_bytes"] = ocorrencias_no_checkpoint(graph, user_id)
     return {"user_id": user_id, "removidos": {**removidos, "checkpoint_threads": len(threads)},
@@ -668,7 +690,7 @@ def main() -> None:
     parser.add_argument("--user-id", default="demo-u-001")
     parser.add_argument("--subscriptions", default="Netflix", help="plataformas separadas por virgula")
     parser.add_argument("--max-rating", default="16+")
-    parser.add_argument("--session-id", default=f"cli-{int(time.time())}")
+    parser.add_argument("--session-id", default=f"cli-{uuid.uuid4().hex}")
     args = parser.parse_args()
 
     if not DB_PATH.exists():

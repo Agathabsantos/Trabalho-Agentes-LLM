@@ -165,6 +165,33 @@ class TestGraphPart2(unittest.TestCase):
         with CatalogoDB(self.db_path) as db:
             self.assertEqual(db.historico("u-old"), [])
 
+    def test_sweep_survives_a_corrupted_thread(self):
+        message = "Quero algo leve e cotidiano, para rir. Recomenda um titulo."
+        self.run_request(message, user="u-old", thread="sweep-old")
+        old = {"configurable": {"thread_id": "sweep-old"}}
+        pending = dict(self.graph.get_state(old).values["pending_action"])
+        pending["created_at"] = time.time() - APPROVAL_TIMEOUT_SECONDS - 1
+        self.graph.update_state(old, {"pending_action": pending})
+        # "a-broken" vem antes na ordem alfabetica: sem isolamento, a varredura parava nela
+        self.saver.conn.execute(
+            "INSERT INTO checkpoints (thread_id, checkpoint_ns, checkpoint_id, type, checkpoint, metadata) "
+            "VALUES ('a-broken', '', 'x', 'msgpack', X'c1c1c1', X'c1')")
+        self.saver.conn.commit()
+
+        falhas = []
+        expiradas = varrer_pendencias(self.graph, agora=time.time(), falhas=falhas)
+
+        self.assertEqual(expiradas, ["sweep-old"])
+        self.assertEqual([falha["thread_id"] for falha in falhas], ["a-broken"])
+
+    def test_missing_rating_fails_closed(self):
+        message = "Quero algo leve e cotidiano, para rir. Recomenda um titulo."
+        with_rating = resultado_publico(self.run_request(message, user="u-rated", thread="rating-1"))
+        without = resultado_publico(self.run_request(message, user="u-unrated", rating=None, thread="rating-2"))
+
+        self.assertEqual(with_rating["pending_action"]["title"], "The Office")
+        self.assertEqual(without["status"], "no_match")
+
     def test_holder_removal_clears_every_structure_and_restores_behavior(self):
         message = "Quero algo leve e cotidiano, para rir. Recomenda um titulo."
         self.run_request(message, user="u-other", thread="rm-other")

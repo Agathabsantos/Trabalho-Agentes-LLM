@@ -23,6 +23,7 @@ from catalogo_db import (
     RegistroNaoEncontrado,
     ORDEM_CLASSIFICACAO,
     normalizar,
+    teto_classificacao,
 )
 
 
@@ -93,7 +94,7 @@ class Ferramentas:
             achados = self.db.buscar_por_clima(
                 termos_normalizados=termos,
                 plataformas=self.ctx.get("subscriptions", []),
-                classificacao_max=self.ctx.get("max_rating", "18+"),
+                classificacao_max=self.ctx.get("max_rating"),
                 excluir=excluir,
             )
         except ErroDeAcesso as exc:
@@ -126,8 +127,24 @@ class Ferramentas:
 
     # ---------------- 3. leitura ----------------
 
+    def _outro_usuario(self, user_id: str | None) -> dict | None:
+        """Menor privilegio: a identidade vem do contexto do app, nunca do modelo.
+
+        O argumento continua aceito so para recusar com motivo quando o modelo
+        tenta outro usuario (ASI02, exercicios/aula14), em vez de quebrar o laco.
+        """
+        if user_id and user_id != self.ctx["user_id"]:
+            return _erro(
+                "fora_do_escopo_do_usuario",
+                f"esta sessao so pode acessar o usuario {self.ctx['user_id']}",
+                "nao informe user_id; as ferramentas ja usam o usuario da sessao",
+            )
+        return None
+
     def consultar_historico(self, user_id: str = None) -> dict:
-        alvo = user_id or self.ctx["user_id"]
+        if (recusa := self._outro_usuario(user_id)):
+            return recusa
+        alvo = self.ctx["user_id"]
         try:
             registros = self.db.historico(alvo)
         except ErroDeAcesso as exc:
@@ -143,7 +160,9 @@ class Ferramentas:
         Isso e o verificador no caminho de escrita: mesmo que o modelo tenha
         alucinado um titulo, a gravacao e recusada e ele recebe o motivo.
         """
-        alvo = user_id or self.ctx["user_id"]
+        if (recusa := self._outro_usuario(user_id)):
+            return recusa
+        alvo = self.ctx["user_id"]
         if not titulo or not str(titulo).strip():
             return _erro(
                 "argumento_invalido",
@@ -173,7 +192,7 @@ class Ferramentas:
             )
 
         # invariante 2: tem de respeitar a classificacao do perfil
-        teto = ORDEM_CLASSIFICACAO.get(self.ctx.get("max_rating", "18+"), 18)
+        teto = teto_classificacao(self.ctx.get("max_rating"))
         if ORDEM_CLASSIFICACAO.get(item["classificacao"], 18) > teto:
             return _erro(
                 "classificacao_incompativel",
@@ -251,7 +270,7 @@ ESQUEMA_FERRAMENTAS = [
             "description": "Lista o que ja foi recomendado ou recusado por este usuario.",
             "parameters": {
                 "type": "object",
-                "properties": {"user_id": {"type": "string"}},
+                "properties": {},
                 "required": [],
             },
         },
@@ -264,7 +283,6 @@ ESQUEMA_FERRAMENTAS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "user_id": {"type": "string"},
                     "titulo": {"type": "string"},
                     "motivo": {"type": "string", "description": "Por que este titulo atende o clima pedido"},
                 },

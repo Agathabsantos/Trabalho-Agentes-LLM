@@ -111,7 +111,7 @@ O verificador da Parte 1 reconstrói o banco seed e apaga o histórico local do
 grafo. Rode-o apenas em uma cópia descartável, nunca enquanto houver sessões ou
 aprovações pendentes.
 
-Em 2026-10-17, a suíte rodou **20 testes** (eles rodam sem modelo mesmo com
+Em 2026-10-17, a suíte rodou **24 testes** (eles rodam sem modelo mesmo com
 chave no `.env`). A demo rodou com o modelo `ministral-8b-2512` no commit
 `6c3ebf4`, com `working_tree_dirty=false`: **8 de 9 casos com o status
 esperado**. O caso 01 falhou porque o modelo leu "mal-estar" como

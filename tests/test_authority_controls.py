@@ -69,6 +69,25 @@ class TestLimitesDeAutoridade(unittest.TestCase):
 
         self.assertEqual(resultado["erro"], "recomendacao_repetida")
 
+    def test_recusa_user_id_de_outro_usuario_vindo_do_modelo(self):
+        ferramentas = self.criar_ferramentas(subscriptions=["Netflix"], max_rating="16+")
+
+        escrita = self.registrar(ferramentas, "The Office", user_id="u-005")
+        leitura = ferramentas.consultar_historico(user_id="u-005")
+
+        self.assertEqual(escrita["erro"], "fora_do_escopo_do_usuario")
+        self.assertEqual(leitura["erro"], "fora_do_escopo_do_usuario")
+        self.assertEqual(self.db.historico("u-005"), [{"titulo": "Dark", "desfecho": "recomendado"}])
+        self.assertEqual(ferramentas.consultar_historico()["user_id"], ferramentas.ctx["user_id"])
+
+    def test_sem_classificacao_vale_a_mais_restrita(self):
+        ferramentas = self.criar_ferramentas(subscriptions=["Netflix"], max_rating=None)
+
+        resultado = self.registrar(ferramentas, "The Office")
+
+        self.assertEqual(resultado["erro"], "classificacao_incompativel")
+        self.assertEqual(self.db.historico(ferramentas.ctx["user_id"]), [])
+
     def test_busca_filtra_assinatura_e_classificacao(self):
         ferramentas = self.criar_ferramentas(
             subscriptions=["Prime Video"],

@@ -7,13 +7,13 @@ os limites próprios do framework.
 ## Implementação
 
 - `create_graph()` registra cinco nós e arestas condicionais em
-  [src/graph.py](../src/graph.py#L241-L527).
+  [src/graph.py](../src/graph.py#L243-L529).
 - `get_graph()` compila o objeto uma vez, configura `SqliteSaver` e o mantém
-  aberto para o CLI em [src/graph.py](../src/graph.py#L531-L536).
+  aberto para o CLI em [src/graph.py](../src/graph.py#L533-L538).
   [conferir_grafo.py](../conferir_grafo.py) importa `get_graph()`; não cria
   topologia paralela.
 - O `interrupt()` e a retomada por `Command(resume=...)` estão em
-  [src/graph.py](../src/graph.py#L443) e [src/graph.py](../src/graph.py#L583).
+  [src/graph.py](../src/graph.py#L445) e [src/graph.py](../src/graph.py#L585).
 - Arestas condicionais levam destinos explícitos: `triage` para busca ou fim;
   `propose` para aprovação ou fim; `approval` para escrita ou fim.
 - Não há nós paralelos no grafo de produto. O controle de reducer é um teste
@@ -35,7 +35,7 @@ ferramenta escolhida pelo modelo.
 execução. Escalares (rota, decisão, título) têm um único escritor ativo por
 ramo. O grafo de produto não tem corrida paralela.
 
-No controle [paralelo](../tests/test_graph.py#L264), as duas branches atualizam `values`: com `operator.add`, a saída é
+No controle [paralelo](../tests/test_graph.py#L316), as duas branches atualizam `values`: com `operator.add`, a saída é
 `["left", "right"]` (ordem não é contrato). Sem reducer, LangGraph 0.6.10
 levanta `InvalidUpdateError` em vez de escolher o último nó. A implementação
 não simula perda silenciosa onde o runtime realmente gera erro.
@@ -56,7 +56,7 @@ não simula perda silenciosa onde o runtime realmente gera erro.
 
 **Framework cobre, sem código local:** execução do grafo de estado e gravação/
 restauração de checkpoint são de LangGraph + `SqliteSaver`; o teste de
-[reinício e retomada](../tests/test_graph.py#L167) fecha/reabre o saver e retoma
+[reinício e retomada](../tests/test_graph.py#L219) fecha/reabre o saver e retoma
 o mesmo thread. Versões fixadas em [requirements.txt](../requirements.txt).
 
 ### Quanto custou o que o framework não deu
@@ -66,13 +66,13 @@ Contagem de linhas de código (sem docstring nem linha em branco) em
 
 | Frente | Onde | Linhas | Observação |
 |---|---|---|---|
-| Motivo de término | `RecommendationResult` [L71-L82](../src/graph.py#L71-L82), `_result` [L226-L234](../src/graph.py#L226-L234), `_event` [L237-L238](../src/graph.py#L237-L238), `resultado_publico` [L618-L624](../src/graph.py#L618-L624) | 30 | `END` não diz por que acabou; `status` + `trajectory` dizem |
+| Motivo de término | `RecommendationResult` [L73-L84](../src/graph.py#L73-L84), `_result` [L228-L236](../src/graph.py#L228-L236), `_event` [L239-L240](../src/graph.py#L239-L240), `resultado_publico` [L637-L643](../src/graph.py#L637-L643) | 30 | `END` não diz por que acabou; `status` + `trajectory` dizem |
 | Detector de laço | nenhum | 0 | não há laço no grafo; `recursion_limit=12` só limita o dano |
-| Tetos | constantes [L50-L52](../src/graph.py#L50-L52), prazo total em `retrieve` [L369-L373](../src/graph.py#L369-L373), prazo HITL em `approval` [L448-L450](../src/graph.py#L448-L450), `timeout`/`max_retries`/`max_tokens` na chamada, `recursion_limit` em 3 invocações | 17 | dos quatro tetos da Aula 05, o framework cobre só o de passos |
-| Erro recuperável × fatal | `except` da interpretação [L291-L302](../src/graph.py#L291-L302) | 10 | erro do modelo vira `status=error` registrado (2 linhas de comentário não contadas); erro de banco não é capturado e sobe |
-| Expiração da pausa | `expirar_pendencia` [L589-L602](../src/graph.py#L589-L602), `varrer_pendencias` [L605-L615](../src/graph.py#L605-L615), `src/expirar_pendencias.py` | 39 | o `interrupt` não tem prazo; o checkpoint espera para sempre |
+| Tetos | constantes [L52-L54](../src/graph.py#L52-L54), prazo total em `retrieve` [L371-L375](../src/graph.py#L371-L375), prazo HITL em `approval` [L450-L452](../src/graph.py#L450-L452), `timeout`/`max_retries`/`max_tokens` na chamada, `recursion_limit` em 3 invocações | 17 | dos quatro tetos da Aula 05, o framework cobre só o de passos |
+| Erro recuperável × fatal | `except` da interpretação [L293-L304](../src/graph.py#L293-L304) | 10 | erro do modelo vira `status=error` registrado (2 linhas de comentário não contadas); erro de banco não é capturado e sobe |
+| Expiração da pausa | `expirar_pendencia` [L591-L604](../src/graph.py#L591-L604), `varrer_pendencias` [L607-L634](../src/graph.py#L607-L634), `src/expirar_pendencias.py` | 53 | o `interrupt` não tem prazo; o checkpoint espera para sempre. Recontado em 2026-10-23, depois do isolamento de falha por thread |
 
-Total: cerca de 96 linhas para o que o LangGraph não oferece, contra zero
+Total: cerca de 110 linhas para o que o LangGraph não oferece, contra zero
 linhas para checkpoint, retomada e execução do grafo.
 
 ## A decisão que virou parâmetro (§6.6)
@@ -87,8 +87,8 @@ ser trocado pela variável de ambiente `LANGGRAPH_DEFAULT_RECURSION_LIMIT`, ou
 seja, por quem configura o servidor, sem diff nenhum no repositório. O grafo
 visita no máximo 5 nós; com 25, um defeito que criasse um ciclo rodaria cinco
 vezes mais passos antes de parar. O projeto declara `MAX_NODES = 12` e o passa
-em todas as invocações ([L558](../src/graph.py#L558),
-[L585](../src/graph.py#L585), [L602](../src/graph.py#L602)), e a versão está
+em todas as invocações ([L560](../src/graph.py#L560),
+[L587](../src/graph.py#L587), [L604](../src/graph.py#L604)), e a versão está
 fixada em `requirements.txt`.
 
 **Um segundo caso, já anunciado pela biblioteca.** Toda execução imprime
