@@ -1,4 +1,6 @@
-# Agente de recomendação de títulos em streaming — Parte 2
+# Agente de recomendação de títulos em streaming
+
+Trabalho da disciplina de agentes com LLM, em três partes sobre o mesmo sistema.
 
 ## Integrantes
 
@@ -7,41 +9,61 @@
 - Kayke Ahrens Biscegli
 - Matheus da Silva Marini
 
-O sistema recebe **texto livre** sobre o que a pessoa quer sentir, consulta o
-catálogo e as avaliações curadas, filtra por assinatura/classificação/histórico,
-propõe uma opção citada por evidência e **para para o responsável pela conta**
-aprovar, editar ou rejeitar a escrita no histórico.
+## O que o sistema faz
+
+O sistema recebe **texto livre** sobre o que a pessoa quer sentir ("quero algo
+leve e cotidiano, para rir") e recomenda o próximo título sem repetir o que já
+foi recomendado, sem sair da assinatura e sem furar a classificação do perfil.
+Ele consulta o catálogo e as avaliações curadas, filtra por assinatura,
+classificação e histórico, propõe uma opção citando a avaliação que a sustenta e
+**para para o responsável pela conta** aprovar, editar ou rejeitar a gravação no
+histórico.
+
+O sistema atual é um grafo LangGraph (`src/graph.py`) com uma única chamada de
+modelo, no nó que interpreta o texto. Filtros, busca, escolha do candidato e
+escrita ficam no código.
+
+## Estado da entrega
+
+| Parte | O que está entregue | Onde |
+|---|---|---|
+| Parte 1 | agente com laço de ferramentas, verificador e análise de modelos; mantido como baseline | `src/agent.py`, `docs/case.md`, `docs/modelos.md`, `docs/model-card.md` |
+| Parte 2 | grafo LangGraph, RAG lexical, memória, pausa humana, idempotência e 9 casos demonstrados com o modelo | `src/graph.py`, `docs/`, `logs/part2_runs.json` |
+| Exercício 14 | os dez riscos OWASP para agentes no case, com mitigações implementadas para ASI02, ASI03 e ASI08 | `exercicios/aula14-respostas.md` |
+| Exercício 15 | plano de observabilidade do agente de trocas | `exercicios/aula15-plano-de-observabilidade.md` |
+
+O detalhe do que está pronto e do que falta fica em `docs/estado-da-entrega.md`.
 
 ## Rodar do zero
 
-Python 3.11+ recomendado (validado com Python 3.13.5):
+Python 3.11 ou mais novo (validado com 3.13 e 3.14.7):
 
 ```bash
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env            # opcional para o modelo; sem chave, usa parser local
-python src/demo_part2.py
+cp .env.example .env             # Windows: copy .env.example .env
 python -m unittest discover -s tests -v
+python src/demo_part2.py
 ```
 
-Para uma chamada interativa, sem chave de modelo:
+O `.env` é opcional. Sem chave, o grafo interpreta o texto com regras locais, e
+os logs dizem `engine=regras_locais`; essa execução nunca é apresentada como
+resultado do modelo. Para usar o modelo, preencha no `.env` `OPENAI_API_KEY`,
+`MODEL_NAME` e, se for a Mistral, `LLM_BASE_URL=https://api.mistral.ai/v1`. A
+chave nunca é versionada.
+
+Para conversar com o agente pelo terminal:
 
 ```bash
-python src/graph.py --message "Curti Severance pelo mal-estar constante. Indica algo parecido." --user-id u-demo --subscriptions Netflix --max-rating 16+
+python src/graph.py --message "Quero algo leve e cotidiano, para rir. Recomenda um titulo." --user-id u-demo --subscriptions Netflix --max-rating 16+
 ```
 
-O CLI mostra a proposta e pede `aprovar`, `rejeitar` ou JSON com edição. O
+O CLI mostra a proposta e pede `aprovar`, `rejeitar` ou um JSON com edição. O
 responsável pode, por exemplo, aprovar corrigindo `reason` e marcando
-`remember_preference: true`. Não há escrita antes da aprovação. O banco SQLite
-e o checkpoint são criados em `dados/` na primeira execução; ambos são locais e
-não devem ser apagados enquanto houver conversa pendente.
-
-O modo de interpretação com LLM é opcional. Para ativá-lo, preencha no `.env`
-`OPENAI_API_KEY`, `MODEL_NAME` e, se aplicável, `LLM_BASE_URL`. A chave nunca é
-versionada. Sem chave, os logs dizem `regras_locais`; essa execução não é
-apresentada como resultado do modelo. O grafo usa zero ou uma chamada de modelo,
-uma busca de evidência e exige aprovação humana.
+`remember_preference: true` para guardar o clima como preferência. Nada é gravado
+antes da aprovação. O banco SQLite e o checkpoint são criados em `dados/` na
+primeira execução; não os apague enquanto houver conversa pendente.
 
 ## Como usar e o que volta
 
@@ -50,8 +72,8 @@ uma busca de evidência e exige aprovação humana.
 > Quero algo leve e cotidiano, para rir. Recomenda um titulo.
 
 Identidade, assinaturas, região e classificação são metadados do aplicativo
-chamador; não são parte de um formulário digitado. A saída é validada pelo
-modelo Pydantic `RecommendationResult`. Exemplo integral copiado da execução
+chamador, não um formulário digitado. A saída é validada pelo modelo Pydantic
+`RecommendationResult`. Exemplo integral copiado da execução
 `06_pausa_edicao_idempotencia` em `logs/part2_runs.json` (2026-10-17, commit
 `6c3ebf4`, árvore limpa, com o modelo `ministral-8b-2512` no `triage`):
 
@@ -77,71 +99,103 @@ modelo Pydantic `RecommendationResult`. Exemplo integral copiado da execução
 }
 ```
 
-`source`/`sources` permite conferir a justificativa. `sufficient=false` significa
-que não há base suficiente e que o título é `null`; recusa é saída normal,
-não exceção. Os contratos e exemplos completos, com data, commit e referência
-exata a log, ficam em `docs/io.md`.
+`sources` permite conferir a justificativa. `sufficient=false` significa que não
+há base para recomendar e que o título é `null`: recusa é saída normal, não
+exceção. Os outros status são `no_match`, `clarification`, `out_of_scope`,
+`rejected` e `error` (a chamada ao modelo falhou). Os contratos e os exemplos
+completos, com data, commit e referência ao log, ficam em `docs/io.md`.
 
-**Se o grafo parar:** a pessoa vê título, plataforma, trecho-fonte, consequência
-da escrita e prazo de 24h. Responde aprovando, editando ou rejeitando. Silêncio
-não aprova: a execução fica pendente no checkpoint; se a retomada ocorrer depois
-do prazo, vira rejeição sem escrita. `python src/expirar_pendencias.py`, rodado
-de hora em hora por cron, rejeita as pendências vencidas; o protótipo não inclui UI. O
-aprovador dos logs é simulado.
+**Se o grafo parar:** a pessoa vê o título, a plataforma, o trecho que sustenta a
+sugestão, a consequência da gravação e o prazo de 24 horas. Responde aprovando,
+editando ou rejeitando. Silêncio não aprova: a conversa fica pendente no
+checkpoint e, depois do prazo, vira rejeição sem gravar nada. O aprovador dos
+logs é simulado; o protótipo não tem interface gráfica.
 
-## Verificação e reprodução
+## Resultados medidos
+
+- **Testes:** 24, todos passando, em 2026-10-23. Eles rodam sem modelo mesmo com
+  chave no `.env`.
+- **Demo com o modelo:** `ministral-8b-2512`, commit `6c3ebf4`, árvore limpa,
+  **8 de 9 casos com o status esperado**. O caso 01 falhou porque o modelo leu
+  "mal-estar" como `ambiente_pesado`; está registrado como falha em
+  `docs/io.md`, sem ajuste no esperado.
+- **Teste A/B da frase do prompt:** 90 chamadas; a frase de segurança fica, mas
+  quase não protege contra injeção. A defesa real é o código. Resultado em
+  `docs/prompts.md` e `logs/ab_frase_prompt.json`.
+
+## Segurança
+
+A análise completa dos dez riscos está em `exercicios/aula14-respostas.md`. O que
+já está no código:
+
+- as ferramentas da Parte 1 usam só o usuário da sessão; um `user_id` vindo do
+  modelo é recusado;
+- sem classificação do perfil, vale a mais restrita (`L`), nunca `18+`;
+- a varredura de expiração segue para as outras conversas quando uma falha;
+- remoção a pedido do titular apaga histórico, memória e checkpoint, e depois
+  varre de novo procurando o identificador.
+
+O que **não** existe: autenticação de quem usa ou aprova, e verificação de hash
+dos pacotes (risco aceito e declarado). O sistema é uma prova de conceito local.
+
+## Comandos
 
 ```bash
-python -m unittest discover -s tests -v
-python src/demo_part2.py           # nove execuções reproduzíveis; regenera o log
-python conferir_grafo.py           # nós/arestas do objeto compilado pelo sistema
-python src/expirar_pendencias.py   # rejeita aprovações pendentes há mais de 24h
-python src/remover_titular.py <user_id>  # remoção a pedido do titular, com varredura
-python src/ab_frase.py             # teste da frase do prompt (§2.3); exige chave no .env
-python src/verificador.py          # verificador legado; reconstrói dados/catalogo.db
+python -m unittest discover -s tests -v   # 24 testes, sem modelo
+python src/demo_part2.py                  # 9 casos do grafo; regenera logs/part2_runs.json
+python conferir_grafo.py                  # nós e arestas do grafo que o sistema executa
+python src/ab_frase.py --repeticoes 5     # teste A/B da frase do prompt; exige chave
+python src/expirar_pendencias.py          # rejeita aprovações pendentes há mais de 24h (cron, de hora em hora)
+python src/remover_titular.py <user_id>   # remoção a pedido do titular, com varredura depois
 ```
 
-Com `OPENAI_API_KEY` e `MODEL_NAME` no `.env`, o mesmo `python src/demo_part2.py`
-passa a chamar o modelo no nó `triage`, e o log registra `engine=modelo`,
-`model_calls=1` e tokens por caso. Se o status de algum caso divergir do
-esperado, o log é gravado mesmo assim (`matches_expected=false`) e o script
-termina com código de erro listando os casos.
+Com chave no `.env`, a demo chama o modelo e o log registra `engine=modelo`,
+`model_calls=1` e tokens por caso. Se algum caso divergir do esperado, o log é
+gravado mesmo assim (`matches_expected=false`) e o script termina com código de
+erro listando os casos. Rode a demo depois de commitar, para o log registrar
+`working_tree_dirty=false`.
 
-O verificador da Parte 1 reconstrói o banco seed e apaga o histórico local do
-grafo. Rode-o apenas em uma cópia descartável, nunca enquanto houver sessões ou
-aprovações pendentes.
+Parte 1 (baseline):
 
-Em 2026-10-17, a suíte rodou **24 testes** (eles rodam sem modelo mesmo com
-chave no `.env`). A demo rodou com o modelo `ministral-8b-2512` no commit
-`6c3ebf4`, com `working_tree_dirty=false`: **8 de 9 casos com o status
-esperado**. O caso 01 falhou porque o modelo leu "mal-estar" como
-`ambiente_pesado`; está registrado como falha em `docs/io.md`, sem ajuste no
-esperado. O teste A/B da frase do prompt está em `logs/ab_frase_prompt.json` e
-em `docs/prompts.md`.
+```bash
+python src/agent.py                       # 5 casos com o modelo; exige chave
+python src/agent.py --sem-modelo          # mesmo laço com regras fixas, sem LLM
+python src/verificador.py                 # confere contra o gabarito e as invariantes
+python src/verificador.py --autoteste
+```
 
-## Estrutura principal
+O verificador reconstrói o banco a partir do seed e apaga o histórico local do
+grafo. Rode-o só numa cópia descartável, nunca com conversas ou aprovações
+pendentes.
 
-- `src/graph.py`: `StateGraph`, contrato Pydantic, interpretação, RAG, pausa e escrita idempotente.
-- `src/catalogo_db.py`: SQLite, filtros de autoridade e memória local.
-- `src/rag.py`: recuperação textual com fonte e filtro de revogação.
-- `src/prompts/`: prompts versionados e carregados durante a execução.
+## Estrutura
+
+- `src/graph.py`: o grafo, o contrato de saída, a interpretação, a busca, a pausa, a escrita idempotente, a expiração e a remoção.
+- `src/catalogo_db.py`: única porta de acesso ao SQLite, com os filtros de autoridade e a memória.
+- `src/rag.py`: busca textual no corpus curado, com fonte e filtro de revogação.
+- `src/prompts/`: prompts versionados, carregados em tempo de execução.
+- `src/demo_part2.py`, `src/ab_frase.py`, `src/expirar_pendencias.py`, `src/remover_titular.py`: demo, teste A/B e rotinas operacionais.
+- `src/agent.py`, `src/motores.py`, `src/ferramentas.py`, `src/verificador.py`, `src/benchmark_modelos.py`: agente e verificação da Parte 1.
+- `tests/`: testes do grafo e dos limites de autoridade.
 - `dados/`: catálogo sintético, corpus curado, dataset de avaliação e históricos.
-- `docs/`: case complementado, arquitetura, memória, RAG, HITL, I/O e prompts.
-- `logs/part2_runs.json`: nove trajetórias de execução.
-- `conferir_grafo.py`: inspeção do grafo de produção.
+- `logs/`: execuções registradas (demo da Parte 2, A/B do prompt, benchmark e demos da Parte 1).
+- `docs/`: documentação de projeto (lista abaixo).
+- `exercicios/`: respostas dos exercícios das aulas.
+- `conferir_grafo.py`: conferência do grafo de produção.
 
-A implementação **não** consulta TMDB, Netflix, Prime Video ou outra API de
-catálogo. Títulos, opiniões, serviços e classificações nos fixtures são dados
-simulados pelo grupo, não disponibilidade atual. O sistema é uma prova de
-conceito local, sem autenticação de contas ou garantia operacional LGPD.
+A implementação **não** consulta TMDB, Netflix, Prime Video nem outra API de
+catálogo. Títulos, avaliações, serviços e classificações são dados simulados
+pelo grupo, não disponibilidade real.
 
 ## Documentos
 
-- `docs/case.md` — domínio e complemento da Parte 2.
-- `docs/arquitetura.md` e `docs/grafo.md` — diagrama, topologia, estado e decisões.
-- `docs/rag.md` e `dados/rag_eval.json` — corpus, dez perguntas e escolha de busca.
-- `docs/memoria.md` — checkpoint, memória longa e limites de remoção.
-- `docs/humano.md` — pausa, edição, prazo e idempotência.
-- `docs/prompts.md` — plano e limites do teste do prompt.
-- `docs/io.md` — schema e exemplos copiados dos logs.
-- `docs/modelos.md`, `docs/fontes.md` — análise da Parte 1 e fontes técnicas.
+- `docs/estado-da-entrega.md`: o que está pronto e o que falta.
+- `docs/case.md`: o domínio, as ferramentas e o complemento da Parte 2.
+- `docs/arquitetura.md` e `docs/grafo.md`: diagrama, topologia conferida, estado e decisões.
+- `docs/io.md`: contrato de entrada e saída e exemplos copiados dos logs.
+- `docs/prompts.md`: plano de prompts, mudança da v1 para a v2 e teste A/B.
+- `docs/rag.md` e `dados/rag_eval.json`: corpus, dez perguntas e escolha da busca.
+- `docs/memoria.md`: checkpoint, memória longa, volume gravado e remoção por titular.
+- `docs/humano.md`: pausa, edição, prazo, expiração e idempotência.
+- `docs/modelos.md` e `docs/model-card.md`: análise de modelos e model card da Parte 1.
+- `docs/fontes.md`: fontes consultadas.
