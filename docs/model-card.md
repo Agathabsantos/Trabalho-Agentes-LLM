@@ -84,7 +84,7 @@ finalidade, base legal e prazo) está em `docs/seguranca.md`, seção 5.
 | Golden dataset v1.0.0 com 29 casos em 5 classes, 8 de recusa, 9 de desenvolvimento e 20 sintéticos | `evals/dataset.json`; `docs/evals.md` |
 | Na versão 1.1.0 com o modelo, 23 de 29 casos passam (79,3%): aprovação, esclarecimento e recusa 100%, recomendação 50%, segurança 66,7% | `evals/resultados/1.1.0-modelo-20261112T025748Z/resumo.json` |
 | A 1.1.0 subiu a média de 75,9% para 79,3% e a segurança de 33,3% para 66,7%; as outras classes não mudaram | `python -m evals.comparar evals/resultados/1.0.0-modelo-20261112T021803Z evals/resultados/1.1.0-modelo-20261112T025748Z`, saída em `docs/evals.md`, seção 4 |
-| O juiz da propriedade "evidência sustenta o pedido" foi validado | **LACUNA [L05]**: os 20 rótulos humanos ainda não foram feitos, então o juiz não está adotado e não entra na nota |
+| O juiz da propriedade "evidência sustenta o pedido" foi validado e **não** adotado: 70% de concordância (14/20) contra limiar de 85%; pegou só 2 dos 4 trechos que não sustentam | `evals/juiz/validacao_resultado.json`; matriz e desacordos em `docs/evals.md`, seção 3 |
 | 36 testes passam: 24 da Parte 2, 10 dos controles e 2 da espera no limite de requisições | `python -m unittest discover -s tests`; `tests/test_controles.py`, `tests/test_retry.py` |
 
 ## 8. Limites conhecidos
@@ -171,7 +171,7 @@ Em `docs/mudancas.md`.
 | L02 | Sem teto de gasto em dinheiro | Configurar no console ao sair da camada grátis |
 | L03 | Sem chave de suspensão que pare escritas | Variável `AGENTE_SUSPENSO` lida no nó `persist`, fail-closed, com teste |
 | L04 | Aprovador sem autenticação | O app hospedeiro autentica e manda `approver`; o grafo recusa resposta sem ele |
-| L05 | Juiz não adotado até a validação | Rotular os 20 itens e rodar `evals.validar_juiz` |
+| L05 | Juiz não adotado (70% contra limiar de 85%): a propriedade "o trecho sustenta o pedido" não tem avaliação automática | Rubrica v1.1 com regra para cobertura parcial, medida num conjunto novo de rótulos |
 | L06 | Sem rotina de expiração de traces | Rodar com o cron da expiração: apagar `logs/traces/*.jsonl` com mais de 90 dias |
 | L07 | Checkpoint guarda a resposta bruta do aprovador, antes de C4, sem prazo | Limpar a resposta antes do `Command(resume)` no app e expirar threads concluídas |
 | L08 | Política de retenção do provedor não verificada | Ler e registrar os termos da API da Mistral antes de dado real |

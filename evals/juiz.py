@@ -29,7 +29,7 @@ def versao_rubrica() -> str:
     return match.group(1) if match else "?"
 
 
-def julgar(pedido: str, titulo: str, trecho: str, tentativas: int = 3) -> dict:
+def julgar(pedido: str, titulo: str, trecho: str, tentativas: int = 4) -> dict:
     from openai import OpenAI, RateLimitError
 
     if not os.environ.get("OPENAI_API_KEY"):
@@ -49,7 +49,7 @@ def julgar(pedido: str, titulo: str, trecho: str, tentativas: int = 3) -> dict:
         except RateLimitError:
             if tentativa == tentativas - 1:
                 raise
-            time.sleep(2 ** tentativa)
+            time.sleep(20 * (tentativa + 1))  # camada gratis: ~2 chamadas por minuto
     bruto = resposta.choices[0].message.content or "{}"
     try:
         v = Veredito.model_validate_json(bruto)

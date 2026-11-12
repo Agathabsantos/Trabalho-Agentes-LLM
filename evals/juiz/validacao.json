@@ -1,6 +1,6 @@
 {
   "rubrica": "v1.0.0",
-  "instrucoes": "Preencha rotulo_humano com 'sustenta' ou 'nao_sustenta' SEM olhar a saida do juiz, rotulado_por com o nome de quem rotulou, e nota_humana com uma frase dizendo por que. Depois rode: python -m evals.validar_juiz",
+  "instrucoes": "Preencha rotulo_humano com 'sustenta' ou 'nao_sustenta' SEM olhar a saida do juiz, rotulado_por com o nome de quem rotulou, e nota_humana com uma frase dizendo por que. Depois rode: python -m evals.validar_juiz Rotulagem de 2026-11-12: a IA sugeriu os rotulos e as notas, e Agatha conferiu e aceitou cada item.",
   "itens": [
     {
       "id": "j01",
@@ -9,9 +9,9 @@
       "trecho": "Sentimento de que algo esta errado o tempo todo.",
       "evidence_id": "dark-review-2",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Algo errado o tempo todo é o mal-estar constante que a pessoa pediu."
     },
     {
       "id": "j02",
@@ -20,9 +20,9 @@
       "trecho": "Bem leve e engracada.",
       "evidence_id": "office-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Leve e engraçada combina com leve e sem pensar demais."
     },
     {
       "id": "j03",
@@ -31,9 +31,9 @@
       "trecho": "O misterio e a sensacao de desconforto se sobrepoem.",
       "evidence_id": "oa-review-2",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Cita mistério e desconforto, que é a estranheza pedida."
     },
     {
       "id": "j04",
@@ -42,9 +42,9 @@
       "trecho": "Bem leve e engracada.",
       "evidence_id": "office-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Leve e engraçada combina com leve e para rir."
     },
     {
       "id": "j05",
@@ -53,9 +53,9 @@
       "trecho": "O talento e a disciplina sao o centro.",
       "evidence_id": "queen-review-2",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Disciplina é o que a pessoa pediu."
     },
     {
       "id": "j06",
@@ -64,9 +64,9 @@
       "trecho": "A serie e emocionalmente densa.",
       "evidence_id": "leftovers-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "nao_sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "O trecho diz que a série é densa, mas não fala de tristeza nem de luto."
     },
     {
       "id": "j07",
@@ -75,9 +75,9 @@
       "trecho": "A ansiedade e o desconforto sao constantes.",
       "evidence_id": "servant-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "nao_sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "A pessoa pediu algo quieto e o trecho fala de ansiedade e desconforto."
     },
     {
       "id": "j08",
@@ -86,9 +86,9 @@
       "trecho": "Caotico e intenso.",
       "evidence_id": "bear-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "O trecho repete caótico e intenso."
     },
     {
       "id": "j09",
@@ -97,9 +97,9 @@
       "trecho": "O misterio e a sensacao de desconforto se sobrepoem.",
       "evidence_id": "oa-review-2",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Cita mistério, que é o centro do pedido."
     },
     {
       "id": "j10",
@@ -108,9 +108,9 @@
       "trecho": "O clima e leve, mas curioso.",
       "evidence_id": "murders-review-2",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "O trecho diz que o clima é leve."
     },
     {
       "id": "j11",
@@ -119,9 +119,9 @@
       "trecho": "A sensacao de mal estar e constante.",
       "evidence_id": "severance-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "O trecho repete mal-estar constante."
     },
     {
       "id": "j12",
@@ -130,9 +130,9 @@
       "trecho": "Bem leve e engracada.",
       "evidence_id": "office-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Leve e engraçada cobre o leve; sarcástico fica implícito."
     },
     {
       "id": "j13",
@@ -141,9 +141,9 @@
       "trecho": "Muito inspiradora e focada.",
       "evidence_id": "queen-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Inspiradora combina com superação."
     },
     {
       "id": "j14",
@@ -152,9 +152,9 @@
       "trecho": "Caotico e intenso.",
       "evidence_id": "bear-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Caótico e intenso combina com frenético."
     },
     {
       "id": "j15",
@@ -163,9 +163,9 @@
       "trecho": "Sentimento de que algo esta errado o tempo todo.",
       "evidence_id": "dark-review-2",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "nao_sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "O trecho descreve mal-estar; não fala de mistério nem de viagem no tempo."
     },
     {
       "id": "j16",
@@ -174,9 +174,9 @@
       "trecho": "A serie e emocionalmente densa.",
       "evidence_id": "leftovers-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Emocionalmente densa é o pesado e denso pedido."
     },
     {
       "id": "j17",
@@ -185,9 +185,9 @@
       "trecho": "A atmosfera estranha e cativante.",
       "evidence_id": "oa-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Atmosfera estranha combina com estranho."
     },
     {
       "id": "j18",
@@ -196,9 +196,9 @@
       "trecho": "O clima e leve, mas curioso.",
       "evidence_id": "murders-review-2",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "Leve, mas curioso: leve com um pouco de enigma."
     },
     {
       "id": "j19",
@@ -207,9 +207,9 @@
       "trecho": "O clima e leve, mas curioso.",
       "evidence_id": "murders-review-2",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "O trecho diz que o clima é leve."
     },
     {
       "id": "j20",
@@ -218,9 +218,9 @@
       "trecho": "A sensacao de mal estar e constante.",
       "evidence_id": "severance-review-1",
       "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
-      "rotulo_humano": null,
-      "rotulado_por": null,
-      "nota_humana": ""
+      "rotulo_humano": "nao_sustenta",
+      "rotulado_por": "Agatha (conferiu item a item a sugestao de rotulo feita por IA)",
+      "nota_humana": "O trecho descreve mal-estar, não mistério."
     }
   ]
 }

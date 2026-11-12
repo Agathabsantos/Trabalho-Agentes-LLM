@@ -102,22 +102,51 @@ outras foram escolhidas porque a busca lexical produziu um trecho que não tem a
 ver com o pedido (ex.: `j07`, "suspense, bem quieta" com "A ansiedade e o
 desconforto são constantes").
 
-⚠ PREENCHER depois da rotulagem e de `python -m evals.validar_juiz`:
+**Como os rótulos foram feitos (2026-11-12):** a IA usada no desenvolvimento
+sugeriu um rótulo e uma nota para cada item, e Agatha conferiu os 20 um a um e
+aceitou todos. Isso é mais fraco que uma rotulagem independente: o rótulo
+humano parte da sugestão de um modelo, e a concordância com o juiz (outro
+modelo) pode sair inflada. Fica declarado como limite da validação. Resultado:
+16 `sustenta` e 4 `nao_sustenta` (j06, j07, j15, j20).
+
+Saída de `python -m evals.validar_juiz` em 2026-11-12, juiz `ministral-8b-2512`,
+rubrica v1.0.0 (`evals/juiz/validacao_resultado.json`):
 
 | | juiz = sustenta | juiz = nao_sustenta |
 |---|---|---|
-| humano = sustenta | | |
-| humano = nao_sustenta | | |
+| humano = sustenta | 12 | 4 |
+| humano = nao_sustenta | 2 | 2 |
 
-Concordância: __% → adotado / não adotado.
+**Concordância: 70% (14 de 20), abaixo do limiar de 85% → o juiz NÃO foi adotado.**
 
-Desacordos, um a um (de `evals/juiz/validacao_resultado.json`):
+A matriz mostra um problema que o percentual esconde: dos 4 casos que o humano
+marcou como `nao_sustenta`, o juiz pegou só 2. Justamente o erro que o juiz
+existe para apontar (trecho que não sustenta o pedido) é o que ele mais deixa
+passar.
 
-| Item | Humano | Juiz | Classificação (juiz, rubrica ou rótulo) | Por quê |
+Desacordos, um a um:
+
+| Item | Humano | Juiz | Defeito de | Por quê |
 |---|---|---|---|---|
+| j06 | nao_sustenta | sustenta | juiz | ligou "emocionalmente densa" a luto por inferência; a rubrica manda responder `nao_sustenta` na dúvida |
+| j15 | nao_sustenta | sustenta | juiz | leu "algo está errado o tempo todo" como mistério e viagem no tempo; a rubrica proíbe ligação que exige conhecer a série |
+| j09 | sustenta | nao_sustenta | rubrica | o trecho cobre "mistério" e não "surreal"; a rubrica não diz o que fazer quando o trecho cobre só parte do pedido |
+| j10 | sustenta | nao_sustenta | rubrica | cobre "leve" e não "engraçado"; mesma lacuna de cobertura parcial |
+| j19 | sustenta | nao_sustenta | rubrica | cobre "leve" e não "família"; mesma lacuna |
+| j13 | sustenta | nao_sustenta | rótulo humano | "inspiradora e focada" não diz superação; o rótulo (sugerido por IA e aceito) foi generoso, e o juiz estava certo |
 
-Se o juiz não atingir o limiar, ele **não** é adotado, a matriz fica aqui como
-resultado, e a propriedade volta a não ter avaliação automática.
+Resumo: 2 defeitos do juiz, 3 da rubrica, 1 do rótulo.
+
+**O que faríamos:** uma rubrica v1.1 que diga explicitamente como tratar
+cobertura parcial (por exemplo, "sustenta se o trecho cobre o clima principal
+do pedido, mesmo sem cobrir todos os adjetivos") e repita a regra "na dúvida,
+nao_sustenta" no fim, perto do exemplo. Mudar a rubrica exige rotular de novo
+um conjunto que o juiz ainda não viu: medir a v1.1 nestes mesmos 20 itens seria
+ajustar a rubrica ao gabarito. Não fizemos nesta entrega.
+
+Como o juiz não atingiu o limiar, ele **não** é adotado: a matriz fica aqui
+como resultado, e a propriedade "o trecho sustenta o pedido" continua sem
+avaliação automática. Os números da suíte (seção 4) não usam o juiz.
 
 ## 4. A comparação entre versões
 

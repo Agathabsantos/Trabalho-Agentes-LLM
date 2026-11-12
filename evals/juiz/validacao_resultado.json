@@ -1,0 +1,207 @@
+{
+  "rubrica": "v1.0.0",
+  "modelo_juiz": "ministral-8b-2512",
+  "itens": 20,
+  "concordancia": 70.0,
+  "limiar": 85.0,
+  "adotado": false,
+  "matriz_humano_x_juiz": {
+    "sustenta": {
+      "sustenta": 12,
+      "nao_sustenta": 4
+    },
+    "nao_sustenta": {
+      "sustenta": 2,
+      "nao_sustenta": 2
+    }
+  },
+  "linhas": [
+    {
+      "id": "j01",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve um mal-estar constante e uma sensação de desconfiança persistente, alinhado com o clima de 'mal-estar constante' buscado.",
+      "nota_humana": "Algo errado o tempo todo é o mal-estar constante que a pessoa pediu.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j02",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve algo leve e engraçado, alinhado com o pedido de algo leve e sem complexidade excessiva.",
+      "nota_humana": "Leve e engraçada combina com leve e sem pensar demais.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j03",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho menciona 'misterio' e 'sensacao de desconforto', que alinham com a busca por 'misterio e estranheza' no pedido.",
+      "nota_humana": "Cita mistério e desconforto, que é a estranheza pedida.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j04",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve algo leve e engraçado, que alinha com o clima de leveza e humor cotidiano pedido.",
+      "nota_humana": "Leve e engraçada combina com leve e para rir.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j05",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho destaca disciplina como elemento central, alinhado ao pedido de determinação e disciplina.",
+      "nota_humana": "Disciplina é o que a pessoa pediu.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j06",
+      "humano": "nao_sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho 'emocionalmente densa' pode alinhar-se com um clima melancólico e de profundidade emocional, como o luto.",
+      "nota_humana": "O trecho diz que a série é densa, mas não fala de tristeza nem de luto.",
+      "concorda": false,
+      "classificacao_desacordo": "juiz",
+      "porque": "Ligou 'densa' a luto por inferencia; a rubrica manda responder nao_sustenta na duvida."
+    },
+    {
+      "id": "j07",
+      "humano": "nao_sustenta",
+      "juiz": "nao_sustenta",
+      "justificativa_juiz": "O trecho menciona ansiedade e desconforto, que são opostos ao clima de quietude e silêncio solicitado.",
+      "nota_humana": "A pessoa pediu algo quieto e o trecho fala de ansiedade e desconforto.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j08",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve exatamente o clima caótico e intenso solicitado no pedido.",
+      "nota_humana": "O trecho repete caótico e intenso.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j09",
+      "humano": "sustenta",
+      "juiz": "nao_sustenta",
+      "justificativa_juiz": "O trecho menciona desconforto, mas não aborda o elemento surreal ou a natureza intrigante e onírica típica de um mistério surreal, que o pedido solicita.",
+      "nota_humana": "Cita mistério, que é o centro do pedido.",
+      "concorda": false,
+      "classificacao_desacordo": "rubrica",
+      "porque": "O trecho cobre 'misterio' e nao 'surreal'; a rubrica nao diz o que fazer quando o trecho cobre so parte do pedido."
+    },
+    {
+      "id": "j10",
+      "humano": "sustenta",
+      "juiz": "nao_sustenta",
+      "justificativa_juiz": "O trecho menciona 'leve', mas o clima 'curioso' não necessariamente sustenta o pedido de algo engracado ou com humor central.",
+      "nota_humana": "O trecho diz que o clima é leve.",
+      "concorda": false,
+      "classificacao_desacordo": "rubrica",
+      "porque": "Cobre 'leve' e nao 'engracado'; mesma lacuna de cobertura parcial."
+    },
+    {
+      "id": "j11",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve explicitamente uma sensação de mal-estar constante, que é compatível com o clima de desconforto solicitado.",
+      "nota_humana": "O trecho repete mal-estar constante.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j12",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve algo leve e engraçado, que pode ser interpretado como sarcástico e leve, compatível com o pedido.",
+      "nota_humana": "Leve e engraçada cobre o leve; sarcástico fica implícito.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j13",
+      "humano": "sustenta",
+      "juiz": "nao_sustenta",
+      "justificativa_juiz": "O trecho descreve inspiração e foco, mas não menciona diretamente superação ou ascensão social/profissional, elementos centrais do pedido.",
+      "nota_humana": "Inspiradora combina com superação.",
+      "concorda": false,
+      "classificacao_desacordo": "rotulo",
+      "porque": "'Inspiradora e focada' nao diz superacao; o rotulo humano (sugerido por IA e aceito) foi generoso."
+    },
+    {
+      "id": "j14",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve caos e intensidade, que alinham com o pedido de algo frenético e intenso.",
+      "nota_humana": "Caótico e intenso combina com frenético.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j15",
+      "humano": "nao_sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho transmite uma sensação de mistério e desconforto persistente, compatível com a busca por algo com viagem no tempo e elementos enigmáticos.",
+      "nota_humana": "O trecho descreve mal-estar; não fala de mistério nem de viagem no tempo.",
+      "concorda": false,
+      "classificacao_desacordo": "juiz",
+      "porque": "Leu mal-estar como misterio; o trecho nao fala de misterio nem de tempo, e a rubrica proibe ligacao que exige conhecer a serie."
+    },
+    {
+      "id": "j16",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve explicitamente a densidade emocional, alinhada ao pedido de algo pesado e denso.",
+      "nota_humana": "Emocionalmente densa é o pesado e denso pedido.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j17",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve uma atmosfera estranha, que alinha com o clima surreal e estranho solicitado.",
+      "nota_humana": "Atmosfera estranha combina com estranho.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j18",
+      "humano": "sustenta",
+      "juiz": "sustenta",
+      "justificativa_juiz": "O trecho descreve um clima leve e curioso, que pode ser interpretado como um 'pouco de enigma'.",
+      "nota_humana": "Leve, mas curioso: leve com um pouco de enigma.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    },
+    {
+      "id": "j19",
+      "humano": "sustenta",
+      "juiz": "nao_sustenta",
+      "justificativa_juiz": "O trecho menciona um clima leve, mas o tom curioso e investigativo não combina com algo carismático e familiar.",
+      "nota_humana": "O trecho diz que o clima é leve.",
+      "concorda": false,
+      "classificacao_desacordo": "rubrica",
+      "porque": "Cobre 'leve' e nao 'familia'; mesma lacuna de cobertura parcial."
+    },
+    {
+      "id": "j20",
+      "humano": "nao_sustenta",
+      "juiz": "nao_sustenta",
+      "justificativa_juiz": "O trecho descreve uma sensação de mal-estar constante, que não está alinhada com o clima de mistério e maratona que o pedido sugere.",
+      "nota_humana": "O trecho descreve mal-estar, não mistério.",
+      "concorda": true,
+      "classificacao_desacordo": null
+    }
+  ],
+  "em": "2026-11-12T11:52:53"
+}
