@@ -312,6 +312,15 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
                      "gen_ai.request.max_tokens": 300,
                      "gen_ai.output.type": "json"},
                 ) as chat_span:
+                    # Unica chamada ao modelo do grafo (prompt em src/prompts/interpret_request.txt).
+                    # Tecnica: few-shot com 4 exemplos fora do dataset, porque na v1 zero-shot o
+                    # ministral-8b copiava o molde "a|b" do contrato e juntava varias tags em mood.
+                    # Contrato: json_object validado por Interpretation (intent, mood, ambiguous,
+                    # clarification); mood e UMA tag do catalogo ou null. Proibido: titulo,
+                    # plataforma, filtro ou cadeia de pensamento na saida.
+                    # O que impede: o modelo escolher o que a pessoa assiste. Ele so le o clima;
+                    # titulo, assinatura e classificacao ficam no SQL de retrieve, e uma tag fora
+                    # da lista falha na validacao e vira status=error, sem escrita.
                     # 429 (limite de requisicoes) espera e tenta de novo, dentro do
                     # teto de tempo da execucao; qualquer outro erro sobe na hora.
                     from openai import RateLimitError

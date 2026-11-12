@@ -4,6 +4,22 @@ O que mudou no sistema, por versão, com o commit. A versão fica em
 `src/versao.py` e vai para todo trace (`app.versao_sistema`); a suíte se recusa
 a rodar com `--versao` diferente do código.
 
+## Devolutiva da Parte 1 (nota 9,9), aplicada em 2026-11-12
+
+A devolutiva da Parte 2 ainda não chegou. Da Parte 1, o que ainda valia para o
+código atual:
+
+| Apontado | O que mudou |
+|---|---|
+| Rigor do prompt (parcial): técnica, contrato e o que a etapa impede estavam só no cabeçalho do prompt, não em comentário no código | comentário na única chamada ao modelo do grafo, `src/graph.py` (nó `triage`) |
+| `Ferramentas` recebia o caso inteiro, com `expected_title` | `src/agent.py` passa o caso sem as chaves `expected_*` |
+| `funcao(**args)` não tratava `TypeError` de argumento inesperado | `src/agent.py` devolve `argumentos_invalidos` como dado ao modelo |
+| `dados/history.jsonl` não era lido por nenhum módulo | removido |
+| Documentos desatualizados (README, cabeçalho do `case.md`) | já corrigido na Parte 2: o README foi reescrito e o `case.md` ganhou o escopo das versões |
+
+Não mudam o que a suíte mede (o agente da Parte 1 não é o sistema avaliado),
+por isso a versão continua 1.1.0.
+
 ## Depois da rodada 1.1.0: correções de registro (sem mudança de versão)
 
 Não mudam o que a suíte mede, por isso a versão continua 1.1.0.

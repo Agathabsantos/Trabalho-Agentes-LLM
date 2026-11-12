@@ -84,7 +84,8 @@ def executar_caso(caso: dict, usar_modelo: bool, db: CatalogoDB) -> dict:
         titulo_referencia=caso.get("titulo_referencia"),
     )
     trajetoria = []
-    ferramentas = Ferramentas(db, caso)
+    # O gabarito (expected_*) nao vai para as ferramentas: devolutiva da Parte 1.
+    ferramentas = Ferramentas(db, {k: v for k, v in caso.items() if not k.startswith("expected")})
     pedido = montar_pedido(caso)
 
     if usar_modelo:
@@ -179,7 +180,15 @@ def executar_caso(caso: dict, usar_modelo: bool, db: CatalogoDB) -> dict:
                 ),
             }
         else:
-            resultado = funcao(**args)
+            try:
+                resultado = funcao(**args)
+            except TypeError as exc:
+                # argumento inesperado do modelo volta como dado, nao derruba o laco
+                resultado = {
+                    "erro": "argumentos_invalidos",
+                    "detalhe": str(exc),
+                    "como_corrigir": "use apenas os parametros declarados no esquema da ferramenta",
+                }
 
         estado.chamadas_ferramenta += 1
         if isinstance(resultado, dict):
