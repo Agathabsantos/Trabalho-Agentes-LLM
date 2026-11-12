@@ -684,12 +684,13 @@ def resumir(thread_id: str, resposta: dict, graph=None, db_path: Path = DB_PATH)
     graph = graph or get_graph()
     config = {"configurable": {"thread_id": thread_id}}
     normalizada = {"decision": resposta} if isinstance(resposta, str) else resposta
-    if isinstance(normalizada.get("reason"), str):
-        # o estado guarda o motivo ja limpo (C4); a comparacao do reenvio usa o mesmo texto
-        normalizada = {**normalizada, "reason": limpar_para_memoria(normalizada["reason"])[0]}
+    # o estado guarda o motivo ja limpo (C4); a comparacao do reenvio usa o mesmo texto,
+    # mas o grafo recebe o original para o no approval limpar e registrar o controle
+    comparavel = ({**normalizada, "reason": limpar_para_memoria(normalizada["reason"])[0]}
+                  if isinstance(normalizada.get("reason"), str) else normalizada)
     snapshot = graph.get_state(config)
     if (snapshot and not snapshot.next
-            and snapshot.values.get("human_response") == normalizada
+            and snapshot.values.get("human_response") == comparavel
             and snapshot.values.get("idempotency_key")):
         action = snapshot.values["pending_action"]
         with telemetria.span_raiz("resume_duplicado", thread_id, {}) as raiz, \

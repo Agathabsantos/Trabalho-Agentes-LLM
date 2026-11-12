@@ -1,0 +1,148 @@
+{
+  "1.0.0": {
+    "rodadas": [
+      "1.0.0-modelo-20261112T021803Z"
+    ],
+    "conversas": 29,
+    "chamadas_ao_grafo": 42,
+    "motores": {
+      "modelo": 29
+    },
+    "latencia_ms": {
+      "p50": 964.3,
+      "p95": 1976.5
+    },
+    "chamadas_ao_modelo": 29,
+    "chat_latencia_ms": {
+      "p50": 935.799,
+      "p95": 1955.7432000000006
+    },
+    "tokens": {
+      "entrada": 21021,
+      "saida": 1066
+    },
+    "custo_usd_por_conversa": {
+      "media": 0.00011424,
+      "p95": 0.00011562,
+      "por_1000_conversas": 0.1142
+    },
+    "motivos_de_termino": {
+      "respondeu": 26,
+      "rejeitado_humano": 2,
+      "expirado": 1
+    },
+    "ferramentas": {
+      "buscar_catalogo": {
+        "chamadas": 17,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "buscar_evidencias": {
+        "chamadas": 12,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "consultar_historico": {
+        "chamadas": 17,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "consultar_titulo": {
+        "chamadas": 1,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "ler_memoria": {
+        "chamadas": 17,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "registrar_recomendacao": {
+        "chamadas": 10,
+        "erros": 0,
+        "taxa_erro": 0.0
+      }
+    },
+    "slo": {
+      "sli": 100.0,
+      "bons": 29,
+      "validos": 29,
+      "objetivo": 95.0,
+      "orcamento_de_erro_consumido_pct": 0.0,
+      "violado": false
+    }
+  },
+  "1.1.0": {
+    "rodadas": [
+      "1.1.0-modelo-20261112T025748Z"
+    ],
+    "conversas": 29,
+    "chamadas_ao_grafo": 41,
+    "motores": {
+      "modelo": 29
+    },
+    "latencia_ms": {
+      "p50": 813.7,
+      "p95": 1615.9
+    },
+    "chamadas_ao_modelo": 29,
+    "chat_latencia_ms": {
+      "p50": 778.401,
+      "p95": 1596.8166000000008
+    },
+    "tokens": {
+      "entrada": 21021,
+      "saida": 1066
+    },
+    "custo_usd_por_conversa": {
+      "media": 0.00011424,
+      "p95": 0.00011568,
+      "por_1000_conversas": 0.1142
+    },
+    "motivos_de_termino": {
+      "respondeu": 26,
+      "rejeitado_humano": 2,
+      "expirado": 1
+    },
+    "ferramentas": {
+      "buscar_catalogo": {
+        "chamadas": 16,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "buscar_evidencias": {
+        "chamadas": 11,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "consultar_historico": {
+        "chamadas": 16,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "consultar_titulo": {
+        "chamadas": 1,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "ler_memoria": {
+        "chamadas": 16,
+        "erros": 0,
+        "taxa_erro": 0.0
+      },
+      "registrar_recomendacao": {
+        "chamadas": 9,
+        "erros": 0,
+        "taxa_erro": 0.0
+      }
+    },
+    "slo": {
+      "sli": 100.0,
+      "bons": 29,
+      "validos": 29,
+      "objetivo": 95.0,
+      "orcamento_de_erro_consumido_pct": 0.0,
+      "violado": false
+    }
+  }
+}

@@ -117,6 +117,12 @@ class TestC4MemoriaSemDadoPessoal(BaseGrafo):
         self.assertNotIn("@exemplo.com", junto)
         self.assertIn("[removido]", junto)
 
+    def test_limpeza_fica_registrada_no_estado_e_no_trace(self):
+        self.pedir("c4c")
+        state = resumir("c4c", {"decision": "approve", "reason": "liga 11 98765-4321"}, self.graph, self.db_path)
+        registro = [c for c in state["controles"] if c["controle"] == "C4_memoria_sem_dado_pessoal"]
+        self.assertEqual(registro[0]["removidos"], ["telefone"])
+
     def test_reenvio_identico_com_dado_pessoal_continua_idempotente(self):
         resposta = {"decision": "approve", "reason": "contato: ana@exemplo.com"}
         self.pedir("c4b")

@@ -9,9 +9,21 @@ a rodar com `--versao` diferente do código.
 ⚠ PREENCHER: o que a correção da Parte 2 apontou, o que mudou e o commit. Se a
 correção ainda não voltou, escrever isso aqui com a data.
 
+## Depois da rodada 1.1.0: correções de registro (sem mudança de versão)
+
+Não mudam o que a suíte mede, por isso a versão continua 1.1.0.
+
+- **C4 passa a aparecer no trace:** a retomada (`graph.resumir`) limpava o motivo
+  antes de entregá-lo ao grafo, e o nó `approval` não via o que registrar; na
+  rodada 1.1.0 o motivo saiu limpo, mas `app.controles` ficou vazio. Agora a
+  retomada só usa o texto limpo para comparar reenvios, e o nó limpa e registra.
+  Teste: `test_limpeza_fica_registrada_no_estado_e_no_trace`.
+- **`arvore_suja`:** a suíte ignora arquivos não rastreados ao checar a árvore,
+  porque a própria pasta da rodada marcava toda rodada como suja.
+
 ## 1.1.0 (Parte 3, etapa 2): controles fora do prompt
 
-Commit: ⚠ PREENCHER
+Commit: `632558f`. Rodada: `evals/resultados/1.1.0-modelo-20261112T025748Z`.
 
 - **C1, allowlist do endpoint (ASI04):** `src/seguranca.py`, aplicado no
   `triage` antes de criar o cliente. Endpoint fora da lista termina em `error`
@@ -21,12 +33,15 @@ Commit: ⚠ PREENCHER
 - **C4, memória sem dado pessoal (Parte 3, seção 3.4):** o motivo editado pelo
   aprovador perde telefone, e-mail, CPF e chaves antes do estado, do trace e da
   escrita (`src/graph.py`, nó `approval`).
-- **Testes:** `tests/test_controles.py`, 9 testes (C1, C2, C3 e C4).
-- **Efeito medido:** ⚠ PREENCHER com a comparação de `docs/evals.md`, seção 4.
+- **Testes:** `tests/test_controles.py`, 9 testes (C1, C2, C3 e C4); o décimo, do registro do C4, entrou depois da rodada.
+- **Efeito medido:** segurança de 33,3% para 66,7% e média de 75,9% para 79,3%
+  na suíte com o modelo; `rec-27` e `rec-28` passaram a passar e `rec-26`
+  (injeção, risco aceito) oscilou no sentido contrário (`docs/evals.md`, seção 4).
 
 ## 1.0.0 (Parte 3, etapa 1): o sistema da Parte 2, instrumentado
 
-Commit: ⚠ PREENCHER
+Commits: `3cabd61` (telemetria e suíte) e `e2105a1` (espera no 429). Rodada:
+`evals/resultados/1.0.0-modelo-20261112T021803Z`, commit `338ee43`.
 
 - **Telemetria OpenTelemetry** (`src/telemetria.py`): spans `invoke_agent`,
   `chat` e `execute_tool` nas convenções GenAI, com motivo de término e versão
@@ -51,6 +66,7 @@ Commit: ⚠ PREENCHER
 
 | Commit | O que mudou |
 |---|---|
+| `e3dd06b` | README atualizado com o estado da Parte 2 e dos exercícios |
 | `2fd5f5a` | Exercício 14: mitigações de ASI02 (ferramentas presas ao usuário da sessão), ASI03 (classificação ausente vale `L`, `thread_id` aleatório) e ASI08 (varredura isolada por thread) |
 | `6c3ebf4` | Parte 2: prompt v2 few-shot, remoção por titular, expiração de pendências, teste A/B |
 | `9aa111e` | Parte 2: grafo LangGraph, RAG, memória e pausa humana |

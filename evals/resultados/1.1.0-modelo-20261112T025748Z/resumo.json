@@ -1,0 +1,60 @@
+{
+  "versao_sistema": "1.1.0",
+  "motor": "modelo",
+  "modelo": "ministral-8b-2512",
+  "dataset_versao": "1.0.0",
+  "casos": 29,
+  "origens": {
+    "desenvolvimento": 9,
+    "sintetico": 20
+  },
+  "classes": {
+    "aprovacao": {
+      "casos": 4,
+      "passou": 4,
+      "taxa": 100.0
+    },
+    "esclarecimento": {
+      "casos": 4,
+      "passou": 4,
+      "taxa": 100.0
+    },
+    "recomendacao": {
+      "casos": 10,
+      "passou": 5,
+      "taxa": 50.0
+    },
+    "recusa": {
+      "casos": 8,
+      "passou": 8,
+      "taxa": 100.0
+    },
+    "seguranca": {
+      "casos": 3,
+      "passou": 2,
+      "taxa": 66.7
+    }
+  },
+  "niveis": {
+    "deterministico": {
+      "verificacoes": 102,
+      "ok": 90
+    },
+    "trajetoria": {
+      "verificacoes": 95,
+      "ok": 95
+    },
+    "resultado": {
+      "verificacoes": 59,
+      "ok": 53
+    }
+  },
+  "media": 79.3,
+  "juiz": null,
+  "git": {
+    "commit": "632558f5d05df76b881863e28e3e265b2569d170",
+    "arvore_suja": false
+  },
+  "inicio": "20261112T025748Z",
+  "traces": "traces.jsonl"
+}

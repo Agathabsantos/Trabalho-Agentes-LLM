@@ -115,7 +115,7 @@ logs é simulado; o protótipo não tem interface gráfica.
 ## Avaliação, controles e traces (Parte 3)
 
 ```bash
-python -m evals.rodar --versao 1.1.0 --pausa 1.5          # suíte com o modelo do .env
+python -m evals.rodar --versao 1.1.0 --pausa 31           # suíte com o modelo do .env (~15 min)
 python -m evals.rodar --versao 1.1.0 --sem-modelo         # suíte com regras locais
 python -m evals.comparar evals/resultados/<A> evals/resultados/<B>
 python -m evals.metricas evals/resultados/<A> evals/resultados/<B>
@@ -127,7 +127,7 @@ python src/ver_trace.py --conversa <thread_id>
 
 `--versao` tem que ser igual a `src/versao.py`. Cada rodada vai para
 `evals/resultados/<versão>-<motor>-<data>/` (resultados, resumo e traces) e é
-commitada: é a evidência dos números de `docs/evals.md`. `--pausa 1.5` evita o
+commitada: é a evidência dos números de `docs/evals.md`. `--pausa 31` respeita o
 limite de requisições da camada grátis da Mistral. Rode a suíte depois de
 commitar, para o resumo registrar a árvore limpa.
 
@@ -137,8 +137,13 @@ A raiz de cada execução traz o motivo de término e a versão do sistema.
 
 ## Resultados medidos
 
-- **Testes:** 33, todos passando, em 2026-11-11 (24 da Parte 2 e 9 dos controles
-  da Parte 3). Eles rodam sem modelo mesmo com chave no `.env`.
+- **Testes:** 36, todos passando, em 2026-11-12 (24 da Parte 2, 10 dos controles
+  e 2 da espera no limite de requisições). Eles rodam sem modelo mesmo com chave no `.env`.
+- **Suíte com o modelo** (`ministral-8b-2512`, 29 casos): 75,9% na 1.0.0 e 79,3% na
+  1.1.0; a classe segurança foi de 33,3% para 66,7% com os controles. Detalhe por
+  classe e as falhas, em `docs/evals.md`.
+- **Camada grátis da Mistral:** cerca de 2 chamadas por minuto. A suíte com o modelo
+  precisa de `--pausa 31` e leva uns 15 minutos.
 - **Suíte da Parte 3:** os números por versão estão em `docs/evals.md`, cada um
   com a pasta da rodada que o produziu.
 - **Demo com o modelo:** `ministral-8b-2512`, commit `6c3ebf4`, árvore limpa,
@@ -172,7 +177,7 @@ dos pacotes (risco aceito e declarado). O sistema é uma prova de conceito local
 ## Comandos
 
 ```bash
-python -m unittest discover -s tests -v   # 33 testes, sem modelo
+python -m unittest discover -s tests -v   # 36 testes, sem modelo
 python src/demo_part2.py                  # 9 casos do grafo; regenera logs/part2_runs.json
 python conferir_grafo.py                  # nós e arestas do grafo que o sistema executa
 python src/ab_frase.py --repeticoes 5     # teste A/B da frase do prompt; exige chave

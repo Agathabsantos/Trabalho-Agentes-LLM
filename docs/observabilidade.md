@@ -92,34 +92,62 @@ RAG, que terminam em `respondeu` com resposta pior: essas ficam com a suíte
 
 ## 5. As métricas medidas
 
-⚠ PREENCHER com a saída de
-`python -m evals.metricas evals/resultados/1.0.0-modelo-* evals/resultados/1.1.0-modelo-*`
-(58 conversas, 29 por versão; cada conversa com aprovação são duas chamadas ao
-grafo). Os preços estão em `evals/metricas.py`: US$ 0,15 por milhão de tokens de
-entrada e de saída para o `ministral-8b-2512` (página do modelo no OpenRouter,
-hospedado pela Mistral, consultada em 2026-11-11). Na camada grátis o custo
-cobrado é zero; a conta usa o preço de lista.
+Saída de `python -m evals.metricas` sobre as duas rodadas com o modelo
+(`evals/resultados/1.0.0-modelo-20261112T021803Z` e
+`evals/resultados/1.1.0-modelo-20261112T025748Z`): 58 conversas, 29 por versão,
+83 chamadas ao grafo (cada conversa com aprovação são duas). Os números ficam
+em `evals/resultados/metricas.json`.
+
+Preços em `evals/metricas.py`: US$ 0,15 por milhão de tokens de entrada e de
+saída para o `ministral-8b-2512` (página do modelo no OpenRouter, hospedado pela
+Mistral, consultada em 2026-11-11). Na camada grátis o custo cobrado é zero; a
+conta usa o preço de lista.
 
 | Métrica | 1.0.0 | 1.1.0 |
 |---|---|---|
-| Conversas | | |
-| Latência do agente por conversa, p50 / p95 | | |
-| Latência da chamada ao modelo, p50 / p95 | | |
-| Custo por conversa, média / p95 | | |
-| Custo por 1.000 conversas | | |
-| Motivos de término | | |
-| Taxa de erro por ferramenta | | |
-| SLI / SLO / orçamento consumido | | |
+| Conversas / chamadas ao grafo | 29 / 42 | 29 / 41 |
+| Latência do agente por conversa, p50 / p95 | 964 ms / 1.977 ms | 814 ms / 1.616 ms |
+| Latência da chamada ao modelo, p50 / p95 | 936 ms / 1.956 ms | 778 ms / 1.597 ms |
+| Tokens (29 chamadas) | 21.021 entrada, 1.066 saída | 21.021 entrada, 1.066 saída |
+| Custo por conversa, média / p95 | US$ 0,000114 / US$ 0,000116 | US$ 0,000114 / US$ 0,000116 |
+| Custo por 1.000 conversas | US$ 0,11 | US$ 0,11 |
+| Motivos de término | respondeu 26 · rejeitado_humano 2 · expirado 1 | respondeu 26 · rejeitado_humano 2 · expirado 1 |
+| Taxa de erro por ferramenta | 0% nas seis (0 de 74 chamadas) | 0% nas seis (0 de 69 chamadas) |
+| SLI / SLO / orçamento consumido | 100% (29/29) / ≥ 95% / 0% | 100% (29/29) / ≥ 95% / 0% |
+
+A latência é quase toda a chamada ao modelo: o resto do grafo (SQLite, busca,
+escrita) soma cerca de 30 ms no p50. A diferença entre as versões vem do provedor,
+não dos controles, que só acrescentam uma regex por trecho e por motivo.
+
+O SLO foi cumprido nas duas, mas estas rodadas não o colocaram à prova: não
+houve nenhum erro nem estouro de tempo. As duas rodadas descartadas por
+`RateLimitError` (`docs/evals.md`, seção 4) teriam violado o SLO, porque cada
+chamada recusada terminava em `erro`; e numa delas uma conversa passou do teto
+de 20 s e respondeu `no_match` sem erro, a degradação silenciosa que o SLO
+existe para pegar. Essas rodadas não foram commitadas, então ficam como relato,
+não como medida.
 
 ### Respostas às quatro perguntas
 
-⚠ PREENCHER com os números da tabela.
-
-- **Negócio:** __ de __ conversas terminaram com recomendação gravada; __ em `no_match`.
-- **Operação:** __ em `erro` e __ em `orcamento_esgotado` na 1.1.0, contra __ na 1.0.0.
-- **Quem paga:** US$ __ por conversa (p95 US$ __), US$ __ por 1.000.
-- **Quem responde:** nenhuma escrita fora de `resume` aprovado (verificação de
-  trajetória da suíte); C3 bloqueou __ trechos e C4 limpou __ motivos.
+- **Negócio:** na 1.1.0, 8 de 29 conversas terminaram com recomendação gravada e
+  10 em `no_match`. Das 10, 6 eram o esperado (pedidos sem base) e 4 foram erros
+  de interpretação do modelo (`docs/evals.md`, seção 4). Ou seja, hoje o que
+  mais derruba a conversão é o `triage`, não o corpus.
+- **Operação:** nenhuma conversa em `erro` ou `orcamento_esgotado` nas duas
+  versões válidas. O risco operacional real é o limite da camada grátis (cerca de
+  2 chamadas por minuto), que inviabiliza mais de um usuário ao mesmo tempo.
+- **Quem paga:** cerca de 725 tokens de entrada e 37 de saída por conversa, US$
+  0,000114 a preço de lista, US$ 0,11 por 1.000 conversas. O prompt few-shot é
+  quase todo o custo; o modelo não é o problema de custo, o limite de requisições
+  é.
+- **Quem responde pelo sistema:** nenhuma escrita fora de uma retomada aprovada
+  nas 58 conversas (verificação `escrita_so_depois_de_aprovacao`). Na 1.1.0, C3
+  pôs 1 trecho em quarentena (`office-review-envenenada`, no `rec-28`) e C4 limpou
+  telefone e e-mail de 1 motivo (`rec-27`). **Lacuna da instrumentação:** nesta
+  rodada a limpeza do C4 não apareceu em `app.controles`, porque a retomada
+  limpava o motivo antes de o nó `approval` registrar o controle. Corrigido depois
+  da rodada, com o teste `test_limpeza_fica_registrada_no_estado_e_no_trace`
+  (`docs/mudancas.md`).
 
 **Lacuna do plano:** a pergunta do negócio pede a taxa de aprovação humana em
 uso real, e as aprovações da suíte são roteirizadas (o `dataset.json` diz quem
