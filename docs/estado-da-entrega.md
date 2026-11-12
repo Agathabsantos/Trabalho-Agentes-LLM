@@ -45,3 +45,14 @@ Não são alegações de qualidade produzidas nesta entrega: qualidade do LLM al
 dos 9 casos e 90 chamadas registrados,
 benchmark de embeddings, teste de carga, disponibilidade atual de streaming ou
 conformidade operacional LGPD.
+
+## Parte 3 (atualizado em 2026-11-11)
+
+| Frente | Onde | Estado |
+|---|---|---|
+| Sistema da Parte 2 rodando | `src/graph.py`, `docs/mudancas.md` | sem mudança de comportamento na 1.0.0; correções da Parte 2: ver `docs/mudancas.md` |
+| Avaliação | `evals/`, `docs/evals.md` | suíte, 29 casos, 3 níveis e juiz implementados; rodadas com o modelo e rotulagem do juiz pendentes |
+| Governança | `docs/model-card.md` | 12 campos, autoridade com ponto de aplicação, 8 lacunas declaradas; reconstrução do trace pendente da rodada com o modelo |
+| Segurança | `src/seguranca.py`, `tests/test_controles.py`, `docs/seguranca.md` | 4 controles fora do prompt com 9 testes; 3 riscos aceitos; histórico do `.env` verificado |
+| Observabilidade | `src/telemetria.py`, `src/ver_trace.py`, `docs/observabilidade.md` | traces GenAI com motivo de término e versão; plano e SLO escritos; métricas pendentes da rodada com o modelo |
+| Frentes opcionais | | não usadas |

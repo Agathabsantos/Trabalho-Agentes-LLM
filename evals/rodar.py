@@ -32,7 +32,10 @@ RESULTADOS = ROOT / "evals" / "resultados"
 def _git() -> dict:
     def run(*args):
         return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout.strip()
-    return {"commit": run("rev-parse", "HEAD"), "arvore_suja": bool(run("status", "--porcelain"))}
+    # Arquivos nao rastreados ficam de fora: a propria pasta da rodada ainda nao foi
+    # commitada e marcava toda rodada como suja (rodada 1.0.0-modelo-20261112T021803Z).
+    return {"commit": run("rev-parse", "HEAD"),
+            "arvore_suja": bool(run("status", "--porcelain", "--untracked-files=no"))}
 
 
 def _estado(db, user_id: str) -> dict:

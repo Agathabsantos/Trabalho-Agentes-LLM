@@ -11,6 +11,8 @@ import re
 import unicodedata
 from pathlib import Path
 
+from seguranca import motivo_quarentena
+
 ROOT = Path(__file__).resolve().parent.parent
 CORPUS_PATH = ROOT / "dados" / "rag_corpus.jsonl"
 
@@ -39,12 +41,22 @@ def carregar_corpus(caminho: Path | None = None) -> list[dict]:
 
 
 def buscar_evidencias(pergunta: str, titulos: set[str], limite: int = 8,
-                      caminho: Path | None = None) -> list[dict]:
-    """Retorna evidencias ativas dos titulos permitidos, em ordem deterministica."""
+                      caminho: Path | None = None,
+                      quarentena: list[dict] | None = None) -> list[dict]:
+    """Retorna evidencias ativas dos titulos permitidos, em ordem deterministica.
+
+    Trecho com linguagem de instrucao ou longo demais nao e devolvido (controle
+    C3, src/seguranca.py); se `quarentena` for uma lista, recebe o id e o motivo.
+    """
     termos = tokens(pergunta)
     achados = []
     for registro in carregar_corpus(caminho):
         if registro.get("status") != "active" or registro.get("title") not in titulos:
+            continue
+        motivo = motivo_quarentena(registro["text"])
+        if motivo:
+            if quarentena is not None:
+                quarentena.append({"id": registro["id"], "motivo": motivo})
             continue
         sobreposicao = termos & tokens(registro["text"])
         if not sobreposicao:

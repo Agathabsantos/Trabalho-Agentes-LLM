@@ -48,6 +48,7 @@ from catalogo_db import (  # noqa: E402
 )
 from rag import buscar_evidencias  # noqa: E402
 import telemetria  # noqa: E402
+from seguranca import endpoint_permitido, limpar_para_memoria  # noqa: E402
 from versao import VERSAO_SISTEMA  # noqa: E402
 
 CHECKPOINT_PATH = ROOT / "dados" / "checkpoints.sqlite"
@@ -283,6 +284,19 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
         model_input_tokens = 0
         decision_source = "regras_locais"
         if message and os.environ.get("OPENAI_API_KEY"):
+            permitido, motivo_endpoint = endpoint_permitido(os.environ.get("LLM_BASE_URL"))
+            if not permitido:
+                # C1 (ASI04), fail-closed: a mensagem nao sai para endpoint fora da allowlist.
+                result = _result("error", "O endpoint do modelo configurado nao e permitido; nenhuma mensagem foi enviada.",
+                                 next_step="corrigir LLM_BASE_URL")
+                return {"reference_title": reference, "route": "finish", "decision": result,
+                        "started_at": started_at, "model_calls": 0, "model_tokens": 0,
+                        "model_input_tokens": 0, "prompt_version": prompt_version,
+                        "model_name": configured_model, "temperature": configured_temperature,
+                        "decision_source": "bloqueado_endpoint", "prompt_manifest": prompt_manifest,
+                        "controles": [{"controle": "C1_allowlist_endpoint", "bloqueou": True,
+                                       "motivo": motivo_endpoint}],
+                        "trajectory": [_event("triage", route="finish", blocked="endpoint")]}
             try:
                 from openai import OpenAI
 
@@ -444,10 +458,13 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
                 telemetria.resultado_ferramenta(span, {"titulos": [m["titulo"] for m in matches]})
         eligible = {candidate["titulo"] for candidate in matches}
         evidence = []
+        quarentena: list[dict] = []
         if eligible:
             with telemetria.span_ferramenta("buscar_evidencias", {"titulos": sorted(eligible), "limite": 12}) as span:
-                evidence = buscar_evidencias(f"{state['mood']} {state['message']}", eligible, limite=12)
-                telemetria.resultado_ferramenta(span, {"ids": [item["id"] for item in evidence]})
+                evidence = buscar_evidencias(f"{state['mood']} {state['message']}", eligible, limite=12,
+                                             quarentena=quarentena)
+                telemetria.resultado_ferramenta(span, {"ids": [item["id"] for item in evidence],
+                                                       "quarentena": quarentena})
         evidence_by_title: dict[str, list[dict]] = {}
         for item in evidence:
             evidence_by_title.setdefault(item["title"], []).append(item)
@@ -462,6 +479,8 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
             "evidence": evidence,
             "current_evidence": evidence,
             "retrieval_calls": 1,
+            "controles": [{"controle": "C3_quarentena_evidencia", "bloqueou": True, **item}
+                          for item in quarentena],
             "memory_hits": memory_hits,
             "semantic_memory": semantic_memory,
             "route": "propose",
@@ -516,6 +535,10 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
 
         title = response.get("title") or state["pending_action"]["title"]
         reason = response.get("reason") or state["pending_action"]["reason"]
+        # C4 (secao 3.4): o motivo vai para historico e episodios; dado pessoal sai antes.
+        reason, removidos = limpar_para_memoria(reason)
+        controles = ([{"controle": "C4_memoria_sem_dado_pessoal", "bloqueou": True, "removidos": removidos}]
+                     if removidos else [])
         platform = response.get("platform") or state["pending_action"]["platform"]
         if title not in state.get("candidate_titles", []):
             result = _result("rejected", "A edicao humana selecionou um titulo que nao passou pelos filtros ou nao tem evidencia.",
@@ -544,8 +567,10 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
         updated_action = {**state["pending_action"], "title": title,
                           "platform": platform, "reason": reason,
                           "remember_preference": response.get("remember_preference") is True}
+        if removidos:
+            response = {**response, "reason": reason}
         return {"human_response": response, "pending_action": updated_action,
-                "idempotency_key": key, "route": "persist",
+                "idempotency_key": key, "route": "persist", "controles": controles,
                 "trajectory": [_event("approval", outcome="approved", edited=bool(response.get("title") or response.get("reason")))]}
 
     def persist(state: AgentState) -> dict:
@@ -659,6 +684,9 @@ def resumir(thread_id: str, resposta: dict, graph=None, db_path: Path = DB_PATH)
     graph = graph or get_graph()
     config = {"configurable": {"thread_id": thread_id}}
     normalizada = {"decision": resposta} if isinstance(resposta, str) else resposta
+    if isinstance(normalizada.get("reason"), str):
+        # o estado guarda o motivo ja limpo (C4); a comparacao do reenvio usa o mesmo texto
+        normalizada = {**normalizada, "reason": limpar_para_memoria(normalizada["reason"])[0]}
     snapshot = graph.get_state(config)
     if (snapshot and not snapshot.next
             and snapshot.values.get("human_response") == normalizada

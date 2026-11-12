@@ -1,0 +1,57 @@
+# Histórico de mudanças
+
+O que mudou no sistema, por versão, com o commit. A versão fica em
+`src/versao.py` e vai para todo trace (`app.versao_sistema`); a suíte se recusa
+a rodar com `--versao` diferente do código.
+
+## Correções apontadas na Parte 2
+
+⚠ PREENCHER: o que a correção da Parte 2 apontou, o que mudou e o commit. Se a
+correção ainda não voltou, escrever isso aqui com a data.
+
+## 1.1.0 (Parte 3, etapa 2): controles fora do prompt
+
+Commit: ⚠ PREENCHER
+
+- **C1, allowlist do endpoint (ASI04):** `src/seguranca.py`, aplicado no
+  `triage` antes de criar o cliente. Endpoint fora da lista termina em `error`
+  sem chamada.
+- **C3, quarentena de evidência (ASI06, ASI09):** trecho com linguagem de
+  instrução ou com mais de 160 caracteres não volta da busca (`src/rag.py`).
+- **C4, memória sem dado pessoal (Parte 3, seção 3.4):** o motivo editado pelo
+  aprovador perde telefone, e-mail, CPF e chaves antes do estado, do trace e da
+  escrita (`src/graph.py`, nó `approval`).
+- **Testes:** `tests/test_controles.py`, 9 testes (C1, C2, C3 e C4).
+- **Efeito medido:** ⚠ PREENCHER com a comparação de `docs/evals.md`, seção 4.
+
+## 1.0.0 (Parte 3, etapa 1): o sistema da Parte 2, instrumentado
+
+Commit: ⚠ PREENCHER
+
+- **Telemetria OpenTelemetry** (`src/telemetria.py`): spans `invoke_agent`,
+  `chat` e `execute_tool` nas convenções GenAI, com motivo de término e versão
+  na raiz; exportação em JSONL; leitor `src/ver_trace.py`.
+- **Ponto de entrada único** `graph.invocar`, usado pelo CLI, pela demo e pela
+  suíte; retomada e expiração também abrem span raiz.
+- **Suíte de avaliação** (`evals/`): golden dataset de 29 casos, verificações
+  determinísticas, de trajetória e de resultado, juiz com rubrica, comparação
+  entre rodadas e métricas.
+- **RAG:** o corpus pode ser trocado por `RAG_CORPUS`, para a suíte injetar um
+  trecho envenenado sem mexer em `dados/`.
+- O comportamento do agente não mudou: os 24 testes da Parte 2 passam sem
+  alteração de asserção.
+- **Retry em 429:** a primeira rodada com o modelo (2026-11-11, descartada)
+  teve 25 de 27 chamadas recusadas com `RateLimitError` pela camada grátis da
+  Mistral, e cada uma terminou em `error`. A chamada ao modelo passou a esperar
+  2, 4 e 8 s e tentar de novo só nesse erro, dentro do teto de 20 s
+  (`ESPERAS_429` em `src/graph.py`); cada espera vira o evento `rate_limit_429`
+  no span `chat`. Teste: `tests/test_retry.py`.
+
+## Antes da Parte 3
+
+| Commit | O que mudou |
+|---|---|
+| `2fd5f5a` | Exercício 14: mitigações de ASI02 (ferramentas presas ao usuário da sessão), ASI03 (classificação ausente vale `L`, `thread_id` aleatório) e ASI08 (varredura isolada por thread) |
+| `6c3ebf4` | Parte 2: prompt v2 few-shot, remoção por titular, expiração de pendências, teste A/B |
+| `9aa111e` | Parte 2: grafo LangGraph, RAG, memória e pausa humana |
+| `33c83e7` | Parte 1: agente com o modelo, benchmark dos candidatos e linha de base medida |

@@ -31,6 +31,7 @@ escrita ficam no código.
 | Parte 2 | grafo LangGraph, RAG lexical, memória, pausa humana, idempotência e 9 casos demonstrados com o modelo | `src/graph.py`, `docs/`, `logs/part2_runs.json` |
 | Exercício 14 | os dez riscos OWASP para agentes no case, com mitigações implementadas para ASI02, ASI03 e ASI08 | `exercicios/aula14-respostas.md` |
 | Exercício 15 | plano de observabilidade do agente de trocas | `exercicios/aula15-plano-de-observabilidade.md` |
+| Parte 3 | traces OpenTelemetry, suíte de avaliação com 29 casos e juiz, quatro controles fora do prompt com teste, model card | `evals/`, `src/telemetria.py`, `src/seguranca.py`, `tests/test_controles.py`, `docs/` |
 
 O detalhe do que está pronto e do que falta fica em `docs/estado-da-entrega.md`.
 
@@ -44,7 +45,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env             # Windows: copy .env.example .env
 python -m unittest discover -s tests -v
-python src/demo_part2.py
+python -m evals.rodar --versao 1.1.0 --sem-modelo
 ```
 
 O `.env` é opcional. Sem chave, o grafo interpreta o texto com regras locais, e
@@ -111,10 +112,35 @@ editando ou rejeitando. Silêncio não aprova: a conversa fica pendente no
 checkpoint e, depois do prazo, vira rejeição sem gravar nada. O aprovador dos
 logs é simulado; o protótipo não tem interface gráfica.
 
+## Avaliação, controles e traces (Parte 3)
+
+```bash
+python -m evals.rodar --versao 1.1.0 --pausa 1.5          # suíte com o modelo do .env
+python -m evals.rodar --versao 1.1.0 --sem-modelo         # suíte com regras locais
+python -m evals.comparar evals/resultados/<A> evals/resultados/<B>
+python -m evals.metricas evals/resultados/<A> evals/resultados/<B>
+python -m evals.validar_juiz                              # juiz contra os 20 rótulos humanos
+python -m unittest tests.test_controles -v                # os controles C1 a C4
+python src/ver_trace.py                                   # as 5 últimas conversas, em árvore
+python src/ver_trace.py --conversa <thread_id>
+```
+
+`--versao` tem que ser igual a `src/versao.py`. Cada rodada vai para
+`evals/resultados/<versão>-<motor>-<data>/` (resultados, resumo e traces) e é
+commitada: é a evidência dos números de `docs/evals.md`. `--pausa 1.5` evita o
+limite de requisições da camada grátis da Mistral. Rode a suíte depois de
+commitar, para o resumo registrar a árvore limpa.
+
+Todo uso do agente grava traces nas convenções GenAI do OpenTelemetry em
+`logs/traces/traces-<data>.jsonl` (fora do git; `TRACE_FILE` troca o destino).
+A raiz de cada execução traz o motivo de término e a versão do sistema.
+
 ## Resultados medidos
 
-- **Testes:** 24, todos passando, em 2026-10-23. Eles rodam sem modelo mesmo com
-  chave no `.env`.
+- **Testes:** 33, todos passando, em 2026-11-11 (24 da Parte 2 e 9 dos controles
+  da Parte 3). Eles rodam sem modelo mesmo com chave no `.env`.
+- **Suíte da Parte 3:** os números por versão estão em `docs/evals.md`, cada um
+  com a pasta da rodada que o produziu.
 - **Demo com o modelo:** `ministral-8b-2512`, commit `6c3ebf4`, árvore limpa,
   **8 de 9 casos com o status esperado**. O caso 01 falhou porque o modelo leu
   "mal-estar" como `ambiente_pesado`; está registrado como falha em
@@ -125,8 +151,13 @@ logs é simulado; o protótipo não tem interface gráfica.
 
 ## Segurança
 
-A análise completa dos dez riscos está em `exercicios/aula14-respostas.md`. O que
-já está no código:
+A análise da Parte 3 está em `docs/seguranca.md` (a do exercício 14, em
+`exercicios/aula14-respostas.md`). O que está no código, com teste:
+
+- **C1:** o modelo só é chamado em `api.mistral.ai` ou `api.openai.com`, por https;
+- **C2:** sem classificação vale `L`, e a edição do aprovador é revalidada;
+- **C3:** trecho do corpus com linguagem de instrução não vira evidência;
+- **C4:** telefone, e-mail, CPF e chaves saem do motivo antes de gravar a memória;
 
 - as ferramentas da Parte 1 usam só o usuário da sessão; um `user_id` vindo do
   modelo é recusado;
@@ -141,7 +172,7 @@ dos pacotes (risco aceito e declarado). O sistema é uma prova de conceito local
 ## Comandos
 
 ```bash
-python -m unittest discover -s tests -v   # 24 testes, sem modelo
+python -m unittest discover -s tests -v   # 33 testes, sem modelo
 python src/demo_part2.py                  # 9 casos do grafo; regenera logs/part2_runs.json
 python conferir_grafo.py                  # nós e arestas do grafo que o sistema executa
 python src/ab_frase.py --repeticoes 5     # teste A/B da frase do prompt; exige chave
@@ -171,12 +202,15 @@ pendentes.
 ## Estrutura
 
 - `src/graph.py`: o grafo, o contrato de saída, a interpretação, a busca, a pausa, a escrita idempotente, a expiração e a remoção.
+- `src/telemetria.py`, `src/ver_trace.py`, `src/versao.py`: traces OpenTelemetry, leitor e versão do sistema.
+- `src/seguranca.py`: os controles C1, C3 e C4.
+- `evals/`: golden dataset, verificações, juiz, suíte, comparação, métricas e as rodadas commitadas.
 - `src/catalogo_db.py`: única porta de acesso ao SQLite, com os filtros de autoridade e a memória.
 - `src/rag.py`: busca textual no corpus curado, com fonte e filtro de revogação.
 - `src/prompts/`: prompts versionados, carregados em tempo de execução.
 - `src/demo_part2.py`, `src/ab_frase.py`, `src/expirar_pendencias.py`, `src/remover_titular.py`: demo, teste A/B e rotinas operacionais.
 - `src/agent.py`, `src/motores.py`, `src/ferramentas.py`, `src/verificador.py`, `src/benchmark_modelos.py`: agente e verificação da Parte 1.
-- `tests/`: testes do grafo e dos limites de autoridade.
+- `tests/`: testes do grafo, dos limites de autoridade e dos controles da Parte 3.
 - `dados/`: catálogo sintético, corpus curado, dataset de avaliação e históricos.
 - `logs/`: execuções registradas (demo da Parte 2, A/B do prompt, benchmark e demos da Parte 1).
 - `docs/`: documentação de projeto (lista abaixo).
@@ -190,6 +224,11 @@ pelo grupo, não disponibilidade real.
 ## Documentos
 
 - `docs/estado-da-entrega.md`: o que está pronto e o que falta.
+- `docs/mudancas.md`: o que mudou por versão, com commit.
+- `docs/evals.md`: dataset, níveis, juiz e comparação entre versões.
+- `docs/seguranca.md`: canais, riscos, controles e o que custaram, riscos aceitos, dados pessoais.
+- `docs/observabilidade.md`: plano, trace, modos de falha, SLO e métricas.
+- `docs/model-card.md`: os doze campos do sistema atual (o da Parte 1 está em `docs/model-card-parte1.md`).
 - `docs/case.md`: o domínio, as ferramentas e o complemento da Parte 2.
 - `docs/arquitetura.md` e `docs/grafo.md`: diagrama, topologia conferida, estado e decisões.
 - `docs/io.md`: contrato de entrada e saída e exemplos copiados dos logs.
@@ -197,5 +236,5 @@ pelo grupo, não disponibilidade real.
 - `docs/rag.md` e `dados/rag_eval.json`: corpus, dez perguntas e escolha da busca.
 - `docs/memoria.md`: checkpoint, memória longa, volume gravado e remoção por titular.
 - `docs/humano.md`: pausa, edição, prazo, expiração e idempotência.
-- `docs/modelos.md` e `docs/model-card.md`: análise de modelos e model card da Parte 1.
+- `docs/modelos.md`: análise de modelos.
 - `docs/fontes.md`: fontes consultadas.

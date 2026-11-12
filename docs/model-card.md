@@ -1,160 +1,166 @@
-# Model card — Agente de recomendação de próximo título
+# Model card: agente de recomendação de títulos em streaming
 
-> **Versão deste card:** 1.0 — fotografia documental de 16/10/2026.  
-> **Escopo histórico:** este model card avalia o laço da Parte 1, não o grafo
-> LangGraph consolidado na Parte 2. As afirmações sobre ausência de RAG, memória
-> ou HITL referem-se somente à implementação baseline avaliada aqui. Para o
-> sistema atual, leia `docs/arquitetura.md`, `docs/rag.md`, `docs/memoria.md` e
-> `docs/humano.md`.
-> **Regra de leitura:** cada afirmação verificável aponta para evidência. `LACUNA [Lnn]` significa que o repositório não sustenta a afirmação necessária para uso real; a lacuna e a correção proposta estão reunidas no fim. Este documento descreve o código e os registros disponíveis, não certifica conformidade legal ou operacional.
+Versão do sistema descrita: **1.1.0** (`src/versao.py`). O card da Parte 1, que
+descreve o laço com tool calling (`src/agent.py`), foi preservado em
+`docs/model-card-parte1.md`.
+
+Regra de leitura: nos campos Autoridade, Avaliação, Riscos aceitos e Registro e
+retenção, cada afirmação aponta para a evidência no repositório, ou leva a marca
+**LACUNA [Lnn]**, reunida na última seção com a correção proposta.
 
 ## 1. Identificação
 
-**Afirmação.** O sistema é o protótipo CLI “Agente de recomendação de próximo título — Parte 1”. O README nomeia Agatha Barbosa Marinho dos Santos, Bruna Kinjo Luiz Pinto, Kayke Ahrens Biscegli e Matheus da Silva Marini como integrantes. O prompt de sistema está na versão v2, datada de 19/09/2026; as execuções registradas identificam `ministral-8b-2512`. [README.md](../README.md#L1-L7) [prompts/system.txt](../src/prompts/system.txt#L1-L10) [logs/demo_runs.json](../logs/demo_runs.json#L1-L7)
-
-**Evidência / lacunas.** O histórico Git registra alterações em 04/09, 18–19/09, 25/09 e 09/10/2026 (`git log --date=short --format='%h %ad %an %s'`), mas não equivale a aprovação formal do sistema. `LACUNA [L01]`: não está nomeada uma pessoa responsável por incidentes, operação, proteção dos dados ou suspensão. `LACUNA [L02]`: não existe número de versão/release do agente nem um artefato que fixe o commit exato ao qual cada execução pertence; a versão v2 identifica o prompt, não o produto.
+Agente de recomendação de títulos em streaming, protótipo local em Python.
+Grafo LangGraph com cinco nós (`triage`, `retrieve`, `propose`, `approval`,
+`persist`) em `src/graph.py`. Grupo: Agatha Barbosa Marinho dos Santos, Bruna
+Kinjo Luiz Pinto, Kayke Ahrens Biscegli e Matheus da Silva Marini. Repositório
+`Agathabsantos/Trabalho-Agentes-LLM`.
 
 ## 2. Finalidade
 
-**Afirmação.** O agente recebe uma frase sobre o que a pessoa quer assistir, usa título de referência, clima, assinatura, classificação e histórico para selecionar no máximo um próximo título, e devolve JSON ou `no_match`. O protótipo é CLI de uma troca, com cinco casos de demonstração; não é o chat/app de produção descrito como objetivo futuro. [README.md](../README.md#L47-L76) [docs/arquitetura.md](arquitetura.md#L1-L16) [src/agent.py](../src/agent.py#L260-L304)
+Recebe um texto livre sobre o que a pessoa quer sentir e propõe **um** título
+do catálogo que esteja na assinatura, dentro da classificação do perfil e fora
+do que já foi recomendado, citando o trecho de avaliação que sustenta a escolha.
+A gravação no histórico só acontece depois que o responsável pela conta aprova.
 
-**Usos fora de escopo.** Não deve ser usado para reproduzir conteúdo, comprar/alugar, alterar assinaturas, consultar disponibilidade real, atender pessoas reais ou tomar decisões sobre usuários fora do conjunto simulado. A ausência de integração com catálogo real e a natureza simulada dos dados estão declaradas no inventário de fontes. [README.md](../README.md#L134-L145) [docs/fontes.md](fontes.md#L24-L35) [docs/case.md](case.md#L284-L312)
-
-**Lacuna.** `LACUNA [L03]`: não há política de uso aprovada, aviso ao usuário, critério de elegibilidade nem processo de validação para uma implantação com dados/usuários reais. A descrição da Parte 2 é plano, não evidência de comportamento implementado. [docs/arquitetura.md](arquitetura.md#L1-L16)
+**Fora de escopo:** reproduzir conteúdo, comprar, alterar assinatura, consultar
+disponibilidade real (o catálogo é sintético), atender usuários reais.
 
 ## 3. Autoridade
 
-**Afirmação.** Na implementação, o modelo pode pedir quatro operações declaradas: consultar título, buscar candidatos, consultar histórico e gravar uma recomendação. As três primeiras leem o SQLite local; a última grava um registro reversível no histórico. Não há ferramenta de compra, pagamento, reprodução ou alteração de assinatura. [src/ferramentas.py](../src/ferramentas.py#L238-L293) [docs/arquitetura.md](arquitetura.md#L19-L80) [src/catalogo_db.py](../src/catalogo_db.py#L129-L146)
-
-| Limite / autoridade efetiva | Ponto de aplicação e evidência | Resultado da revisão |
+| Limite | Onde é aplicado | Evidência |
 |---|---|---|
-| **Escopo:** sugerir um título e gravar a sugestão no histórico local. | Ausência de ferramenta de pagamento, reprodução e gestão de assinatura na lista exposta: [src/ferramentas.py](../src/ferramentas.py#L238-L293). Escrita possível: [src/ferramentas.py](../src/ferramentas.py#L156-L224). | Bloqueio por ausência de ferramenta para ações de produto/conta; a gravação local continua autorizada. |
-| **Assinatura:** título precisa estar em pelo menos uma plataforma declarada na conta. | Aplicado na busca em código: [src/catalogo_db.py](../src/catalogo_db.py#L86-L113); revalidado antes de gravar: [src/ferramentas.py](../src/ferramentas.py#L184-L192). O teste chama a ferramenta de escrita e exige recusa: [tests/test_authority_controls.py](../tests/test_authority_controls.py#L45-L51). O autoteste offline também injeta um resultado inválido: [src/verificador.py](../src/verificador.py#L91-L115). | Controle exercitado diretamente e também verificado offline; o verificador offline sozinho não é gate na resposta ao usuário. |
-| **Classificação:** título não pode exceder o teto do perfil. | Aplicado na busca: [src/catalogo_db.py](../src/catalogo_db.py#L92-L113); revalidado na escrita: [src/ferramentas.py](../src/ferramentas.py#L194-L201); teste direto exige recusa da escrita: [tests/test_authority_controls.py](../tests/test_authority_controls.py#L53-L61). | Controle exercitado diretamente; o autoteste adicional é offline. |
-| **Não repetição:** título já registrado para o usuário deve ser excluído. | Busca exclui histórico e referência: [src/ferramentas.py](../src/ferramentas.py#L88-L100); escrita confere novamente: [src/ferramentas.py](../src/ferramentas.py#L203-L210); teste direto exige recusa: [tests/test_authority_controls.py](../tests/test_authority_controls.py#L63-L70). | Controle exercitado diretamente; o autoteste adicional é offline. |
-| **Busca de candidatos respeita assinatura/classificação.** | Filtros aplicados no acesso ao catálogo: [src/catalogo_db.py](../src/catalogo_db.py#L86-L113); teste de integração das ferramentas verifica que não retorna candidato incompatível: [tests/test_authority_controls.py](../tests/test_authority_controls.py#L91-L81). | Exercitado em teste; a revalidação na escrita permanece a barreira final para gravação. |
-| **Título deve ter vindo dos candidatos.** | O prompt proíbe recomendação fora do resultado de `buscar_candidatos`: [prompts/system.txt](../src/prompts/system.txt#L42-L48). A escrita verifica existência no catálogo e as três invariantes, mas não verifica que o título pertence à lista devolvida nesta execução: [src/ferramentas.py](../src/ferramentas.py#L173-L210). | **Só prompt quanto à pertença à lista**; é uma lacuna, não uma garantia contra desobediência. `LACUNA [L08]`. |
-| **Justificativa, plataforma final e formato semântico da resposta.** | O prompt pede JSON e proíbe inventar justificativa/plataforma: [prompts/system.txt](../src/prompts/system.txt#L42-L63). O motor só faz parse de JSON; não valida todas as chaves, os tipos, a relação entre título e plataforma nem a correspondência da justificativa com a evidência: [src/motores.py](../src/motores.py#L232-L241). | **Só prompt / parse sintático**; não há controle semântico de saída. `LACUNA [L08]`. |
-| **Limites operacionais:** até 8 passos, 10 chamadas de ferramenta e 12.000 tokens acumulados. | Constantes e verificações antes de cada passo: [src/agent.py](../src/agent.py#L39-L41) [src/agent.py](../src/agent.py#L106-L121). | Aplicação em código. O total de tokens só é conhecido depois da resposta do provedor, portanto uma única chamada pode ultrapassar o teto antes da próxima checagem. Não é teto financeiro nem limite de gasto por conta. |
-| **Gasto monetário.** | Nenhuma ferramenta compra conteúdo; as chamadas ao modelo usam uma chave configurada no ambiente: [src/motores.py](../src/motores.py#L253-L268). O `.env.example` só documenta nomes de variáveis, sem revelar os privilégios reais da chave: [.env.example](../.env.example#L1-L15). | Sem gasto de compra/reprodução pelo agente. O uso do provedor pode gerar custo; `LACUNA [L05]`: não há teto em moeda, alerta nem limite de gasto documentado/configurado na plataforma. |
-| **Credencial e privilégio.** | A credencial `OPENAI_API_KEY` e o endpoint são carregados do ambiente; o cliente pode apontar para endpoints compatíveis: [src/motores.py](../src/motores.py#L253-L268) [.env.example](../.env.example#L4-L15). Banco é arquivo SQLite local: [src/catalogo_db.py](../src/catalogo_db.py#L19-L22) [src/catalogo_db.py](../src/catalogo_db.py#L54-L61). | Não há credencial de streaming, MCP ou API de catálogo no protótipo. `LACUNA [L04]`: não há evidência dos privilégios, limites, titularidade ou rotação da chave real do provedor, nem de uma identidade de serviço restrita para o SQLite. |
-| **Isolamento por usuário.** | Até 2026-10-22, `consultar_historico` e `registrar_recomendacao` aceitavam `user_id` vindo do modelo e liam/gravavam para esse alvo. Desde 2026-10-23 as duas usam só o usuário da sessão: [src/ferramentas.py](../src/ferramentas.py#L130-L152) [src/ferramentas.py](../src/ferramentas.py#L156-L165). O parâmetro saiu do esquema: [src/ferramentas.py](../src/ferramentas.py#L266-L292). Se o modelo ainda mandar outro ID, a ferramenta devolve `fora_do_escopo_do_usuario`. | `LACUNA [L07]` **corrigida no código** (exercício 14, ASI02). Teste negativo de acesso cruzado: `test_recusa_user_id_de_outro_usuario_vindo_do_modelo` ([tests/test_authority_controls.py](../tests/test_authority_controls.py#L72)). Continua faltando autenticação real da sessão: o `user_id` do contexto ainda é confiado ao app. |
-| **Falha de controle/provedor.** | Exceção do modelo encerra o laço com `erro_do_modelo`; falha de orçamento gera `no_match` e texto `next_step: encaminhar para um humano`: [src/agent.py](../src/agent.py#L106-L121) [src/agent.py](../src/agent.py#L210-L220). Falhas de ferramenta retornam erro como dado: [src/ferramentas.py](../src/ferramentas.py#L30-L31) [src/ferramentas.py](../src/ferramentas.py#L173-L182). | O encerramento é evidenciado; o encaminhamento humano não é executado por uma integração. A gravação continua protegida pelas validações em código. |
-| **Aprovação humana e suspensão.** | O case declara que a escrita atual é reversível e que o responsável pela conta só seria acionado para ações pagas futuras: [docs/case.md](case.md#L44-L46) [docs/case.md](case.md#L113-L117). Não há ferramenta de aprovação no esquema de quatro ferramentas: [src/ferramentas.py](../src/ferramentas.py#L238-L293). | Nenhuma recomendação pausa para aprovação humana nesta versão. `LACUNA [L06]`: não há pessoa autorizada nomeada, limiar/procedimento de aprovação, prazo de resposta, botão/kill switch ou runbook de suspensão. Interromper o processo CLI é possível operacionalmente, mas não está formalizado como controle. |
-
-**Credencial, privilégio excedente e remoção.** A credencial do provedor é necessária apenas para inferência; acesso ao SQLite opera com as permissões do processo/usuário do sistema operacional. Não há permissão MCP nem credencial para catálogo externo. Porém os parâmetros `user_id` permitem acesso fora do usuário da sessão e devem ser removidos do contrato público ou substituídos por identidade confiável injetada pelo servidor antes de qualquer uso real. A reversão de registros está exposta como método da classe, mas não está entre as quatro ferramentas declaradas; o dispatcher ainda procura métodos por nome dinamicamente: [src/ferramentas.py](../src/ferramentas.py#L227-L234) [src/agent.py](../src/agent.py#L169-L183). Recomenda-se dispatch por allowlist explícita, não por `getattr` aberto.
-
-**Cobertura dos testes de autoridade.** A suíte nova chama diretamente a busca e `registrar_recomendacao()`, verifica recusas por assinatura, classificação e repetição, e comprova escrita válida e reversão. [tests/test_authority_controls.py](../tests/test_authority_controls.py#L19-L91) Os testes não exercitam ainda chamada de ferramenta forjada pelo modelo, isolamento entre usuários nem validação semântica da resposta; estes continuam lacunas (`L07` e `L08`).
+| **Escopo:** propor um título e gravar a proposta aprovada no histórico local | ausência de ferramenta | o grafo não tem ferramenta de compra, reprodução, assinatura ou envio de mensagem; as únicas escritas são `registrar_idempotente` e a remoção pelo titular (`src/catalogo_db.py`) |
+| **Ações proibidas:** o modelo escolher título, plataforma ou filtro | código (arquitetura) | o modelo só devolve `Interpretation` (intenção, clima, ambiguidade), validada como `Literal` (`src/graph.py:331`); a escolha é SQL e ordenação em `src/graph.py:419-470` |
+| **Assinatura** | código | busca em `src/catalogo_db.py` (`buscar_por_clima`) e revalidação da edição humana em `src/graph.py:539-545`; teste `TestC2AutoridadeDoPerfil.test_aprovador_nao_troca_para_titulo_fora_da_assinatura` |
+| **Classificação; sem valor vale `L`** | código | `src/catalogo_db.py:27-33`; teste `TestC2AutoridadeDoPerfil.test_sem_classificacao_nao_propoe_titulo_14_mais` |
+| **Não repetir o histórico** | código | exclusão em `src/graph.py` (nó `retrieve`, `excluded`); caso `rec-08-historico` da suíte |
+| **Credencial** | credencial | uma chave do provedor no `.env`, que só serve para inferência; o SQLite é arquivo local com a permissão do usuário do SO. **LACUNA [L01]**: a chave da camada grátis da Mistral não tem escopo nem limite configurável por nós |
+| **Endpoint do modelo só em `api.mistral.ai` ou `api.openai.com`, por https** | código | C1, `src/seguranca.py:18-35`, aplicado em `src/graph.py:286-300`; teste `TestC1AllowlistEndpoint` |
+| **Limite por execução:** 1 chamada ao modelo, 300 tokens de saída, 20 s, 12 passos do grafo | código | `src/graph.py:55-56`, `max_tokens=300` e `timeout` na chamada, `recursion_limit=MAX_NODES` em `invocar`; verificação de trajetória `no_maximo_uma_chamada_ao_modelo` da suíte |
+| **Limite de gasto** | plataforma | camada grátis (plano Experiment) da Mistral, que limita requisições por segundo e por mês. **LACUNA [L02]**: não há teto de gasto em dinheiro configurado, porque não há cartão; ao sair da camada grátis, configurar o limite no console |
+| **Limiar de aprovação humana:** toda gravação, sem exceção | código | `persist` só é alcançável a partir de `approval` (arestas em `src/graph.py`), que começa com `interrupt` (`src/graph.py:509`); verificação de trajetória `escrita_so_depois_de_aprovacao` |
+| **Silêncio não aprova:** pendência vence em 24 h | código | `src/graph.py` (`expirar_pendencia`, checagem do prazo no nó `approval`); caso `rec-24-expirada`; `test_expired_approval_rejects_on_resume` |
+| **Comportamento quando um controle falha** | código | C1 e C2 são fail-closed (`error` ou `no_match`, sem chamada e sem escrita); C3 e C4 são fail-open com registro (`docs/seguranca.md`, seção 3); exceção do provedor vira `status=error` sem escrita (`src/graph.py`, `except` do `triage`) |
+| **Quem pode suspender o agente** | plataforma | quem tem acesso à máquina: apagar a chave do `.env` desliga o modelo (o grafo cai nas regras locais, rotuladas `regras_locais` no trace). **LACUNA [L03]**: não há chave de suspensão que pare também as escritas, nem pessoa nomeada |
+| **Quem aprova** é o responsável pela conta | prompt e processo | **LACUNA [L04]**: não há autenticação; o aprovador é quem conhece o `thread_id`. O trace grava `app.aprovador` quando o app manda e `nao_identificado` quando não (`src/telemetria.py`, `fechar_raiz`) |
 
 ## 4. Ferramentas e integrações
 
-**Afirmação.** As quatro ferramentas chamam somente a camada local `CatalogoDB`/SQLite. O banco é derivado dos dados em [dados/streaming_catalog.json](../dados/streaming_catalog.json) e [dados/historico_seed.jsonl](../dados/historico_seed.jsonl); o código e a documentação dizem que TMDB e servidor MCP pertencem à Parte 2, não a esta entrega. [src/ferramentas.py](../src/ferramentas.py#L42-L73) [src/ferramentas.py](../src/ferramentas.py#L75-L152) [src/catalogo_db.py](../src/catalogo_db.py#L164-L228) [docs/arquitetura.md](arquitetura.md#L1-L16)
-
-| Integração/ferramenta | Permissão que o código concede | Evidência |
+| Ferramenta (nome no trace) | Leitura ou escrita | Contra o quê |
 |---|---|---|
-| `consultar_titulo` | Leitura de metadados, tags, sinopse e avaliações simuladas do catálogo. | [src/ferramentas.py](../src/ferramentas.py#L44-L73) |
-| `buscar_candidatos` | Leitura de candidatos; filtros por assinatura, classificação e histórico são executados localmente. | [src/ferramentas.py](../src/ferramentas.py#L75-L126) [src/catalogo_db.py](../src/catalogo_db.py#L86-L113) |
-| `consultar_historico` | Leitura de registros de histórico pelo `user_id` indicado. | [src/ferramentas.py](../src/ferramentas.py#L144-L152) |
-| `registrar_recomendacao` | Escrita local de `user_id`, título e desfecho `recomendado`; reversível pelo código da execução. | [src/ferramentas.py](../src/ferramentas.py#L156-L234) [src/catalogo_db.py](../src/catalogo_db.py#L131-L146) |
-| Cliente OpenAI-compatível | Envio de mensagens e ferramentas ao endpoint indicado pelo ambiente; destino/provedor real não fica congelado no código. | [src/motores.py](../src/motores.py#L206-L230) [src/motores.py](../src/motores.py#L253-L268) |
-| MCP/TMDB/streaming | Não implementados nem conectados nesta versão. | [docs/arquitetura.md](arquitetura.md#L1-L16) [docs/fontes.md](fontes.md#L24-L35) |
+| `consultar_titulo` | leitura | SQLite `dados/catalogo.db` via `CatalogoDB` |
+| `consultar_historico` | leitura | SQLite, tabela `historico` |
+| `ler_memoria` | leitura | SQLite, `episodios` (FTS5) e `memoria_semantica` |
+| `buscar_catalogo` | leitura | SQLite, filtros de clima, assinatura, classificação e exclusões |
+| `buscar_evidencias` | leitura | `dados/rag_corpus.jsonl` (busca lexical, com C3) |
+| `registrar_recomendacao` | escrita reversível, idempotente | SQLite, `historico`, `episodios`, `memoria_semantica` |
+| Modelo | inferência | API da Mistral, compatível com a da OpenAI, pela biblioteca `openai` |
 
-**Lacuna de privilégio.** A tabela de ferramentas documenta o conjunto pretendido, mas não existe teste de segurança que tente invocar nomes fora do esquema ou provar isolamento de usuário. A busca dinâmica por atributos em `agent.py` e a ausência de vínculo do `user_id` são limitações de implementação, detalhadas em `LACUNA [L07]` e `LACUNA [L08]`.
+Não há MCP, multiagente nem mídia. Nenhuma ferramenta é chamada pelo modelo: o
+grafo chama todas.
 
 ## 5. Modelo e provedor
 
-**Afirmação.** A escolha declarada é Mistral Ministral 8B, ID `ministral-8b-2512`; o prompt registra versão v2 em 19/09/2026, temperatura 0,2 e `tool_choice=auto`. O log de demonstração confirma esse ID nas cinco execuções. [docs/modelos.md](modelos.md#L226-L248) [prompts/system.txt](../src/prompts/system.txt#L1-L10) [logs/demo_runs.json](../logs/demo_runs.json#L1-L7)
+`ministral-8b-2512` (Mistral), camada grátis, `https://api.mistral.ai/v1`,
+temperatura 0,2, `response_format=json_object`, até 300 tokens de saída. Prompt
+`src/prompts/interpret_request.txt` **v2** (few-shot), com o SHA-256 gravado em
+todo trace (`app.prompt.sha256`). A escolha e as alternativas estão em
+`docs/modelos.md`.
 
-**Evidência parcial.** A documentação relata testes com Mistral e seus modelos; o cliente, contudo, aceita qualquer endpoint compatível definido em `LLM_BASE_URL`, e o log não registra URL, região ou identificador do provedor. [docs/modelos.md](modelos.md#L24-L49) [src/motores.py](../src/motores.py#L253-L268) [logs/demo_runs.json](../logs/demo_runs.json#L1-L15)
+## 6. Dados
 
-`LACUNA [L09]`: o identificador exato do modelo usado é conhecido, mas não há evidência da data de release/snapshot do provedor, do endpoint efetivamente usado na execução, da região de processamento, da residência dos dados, do prazo de retenção pelo provedor ou de uso/não uso para treinamento. O repositório não contém `.env` real e não fixa esses termos; não se afirma que os dados ficam no Brasil nem que não são usados para treino. [`.env.example`](../.env.example#L1-L15) [src/motores.py](../src/motores.py#L253-L268)
-
-## 6. Dados — inventário de dados pessoais e fluxo
-
-**Afirmação.** Os arquivos de casos e histórico usados na entrega são declarados simulados; os IDs são sintéticos. Não são uma base real de assinantes. Em uso real, texto livre, título de referência, assinatura, classificação/perfil e histórico associados a um usuário podem identificar ou caracterizar uma pessoa; o próprio case reconhece que histórico de consumo seria dado pessoal. [docs/case.md](case.md#L284-L312) [dados/cases.json](../dados/cases.json#L1-L62) [dados/historico_seed.jsonl](../dados/historico_seed.jsonl#L1-L3)
-
-| Onde entra/fica/vai | Dados e finalidade | Base legal (LGPD, art. 7º) | Guarda e minimização |
-|---|---|---|---|
-| **Arquivos de entrada versionados**: [dados/cases.json](../dados/cases.json), [dados/historico_seed.jsonl](../dados/historico_seed.jsonl), [dados/streaming_catalog.json](../dados/streaming_catalog.json). | Casos com texto de pedido, `user_id`, título, assinaturas e teto etário; histórico fictício para exercitar não repetição; catálogo simulado para recomendar. | Valores atuais são fictícios: não se atribui base legal de tratamento de dado pessoal real. `LACUNA [L10]` para substituir por dados reais: controlador deve documentar a hipótese aplicável do art. 7º antes da coleta/uso; não há decisão registrada no repositório. | Ficam no Git e em seu histórico enquanto o repositório/commits forem mantidos; não há prazo de descarte. Minimizados para prova de conceito, mas a retenção do Git não tem política. [docs/fontes.md](fontes.md#L24-L35) [dados/cases.json](../dados/cases.json#L1-L62) [dados/historico_seed.jsonl](../dados/historico_seed.jsonl#L1-L3) |
-| **Prompt montado em memória no processo**. | Query, `user_id`, título de referência, clima, assinaturas, teto de classificação e região. Finalidade: contextualizar uma recomendação. O template inclui região; a busca SQLite filtra clima, assinatura, classificação e histórico, sem usar região. [src/agent.py](../src/agent.py#L66-L77) [prompts/user_prompt.txt](../src/prompts/user_prompt.txt#L13-L23) [src/catalogo_db.py](../src/catalogo_db.py#L86-L113) | Atualmente sintéticos; para pessoas reais, `LACUNA [L10]` — base do art. 7º não definida. | Só na memória do processo durante a execução, sem rotina explícita de limpeza. **Minimização pendente:** `user_id` e região são enviados ao modelo embora não sejam necessários para inferir o clima; região não é usada pelo filtro atual. |
-| **Mensagens e resultados enviados ao provedor externo**. | O cliente transmite as mensagens (incluindo prompt) e resultados de ferramentas ao provedor. Podem seguir query, contexto da conta, ID, títulos consultados, preferências inferidas, avaliações simuladas e justificativa. Finalidade: inferência e tool calling. [src/motores.py](../src/motores.py#L206-L230) [src/motores.py](../src/motores.py#L212-L224) | `LACUNA [L10]`: base legal e transparência para pessoa real não documentadas. | `LACUNA [L09]`: retenção, região e treino no provedor desconhecidos. **Minimização pendente:** reduzir identificadores e contexto enviado; não transmitir região se não utilizada; avaliar se consultas de histórico são necessárias, pois o esquema permite devolvê-las ao modelo. [src/ferramentas.py](../src/ferramentas.py#L144-L152) |
-| **SQLite local `dados/catalogo.db`** (índice relacional; não é índice vetorial). | Catálogo de teste e tabela `historico` com `user_id`, título e desfecho; serve para filtrar repetição e gravar recomendação. [src/catalogo_db.py](../src/catalogo_db.py#L164-L193) | Valores de teste fictícios; para dados reais, `LACUNA [L10]`. | O banco é apagado e reconstruído no início da execução; o arquivo pode permanecer no disco até a execução seguinte. Não há prazo formal, controle de acesso por usuário, criptografia ou descarte seguro documentado. [src/catalogo_db.py](../src/catalogo_db.py#L164-L174) |
-| **Registro de execução** [logs/demo_runs.json](../logs/demo_runs.json). | Guarda query, ID do caso/usuário, modelo, contadores, trajetória de chamadas, argumentos, resultados e decisão. Finalidade: auditoria e verificação offline. [src/agent.py](../src/agent.py#L221-L232) [src/agent.py](../src/agent.py#L296-L301) [logs/demo_runs.json](../logs/demo_runs.json#L1-L31) | Os registros atuais correspondem a exemplos sintéticos. Para logs de pessoas reais, `LACUNA [L10]`. | Arquivo versionado; não há expiração ou política de acesso/eliminação. O log não guarda URL do provedor, prompt completo/configuração completa nem todos os campos de contexto usados; `case_id` só permite reconstruir o contexto nos casos versionados. [`.gitignore`](../.gitignore#L1-L12) [logs/demo_runs.json](../logs/demo_runs.json#L1-L31) |
-| **Memória persistente, vetor/RAG e outros destinos**. | Não implementados na Parte 1: não há banco vetorial nem resumo persistente de preferências; há somente histórico SQLite simulado e reconstruído. [docs/arquitetura.md](arquitetura.md#L1-L16) [docs/memoria.md](memoria.md#L1-L20) | Não há tratamento real evidenciado nesses destinos. | Sem retenção aplicável na implementação atual. A proposta de personalização/Parte 2 é planejamento, não integração ativa. [docs/arquitetura.md](arquitetura.md#L229-L257) |
-
-**Minimização e adequação.** Na prova de conceito, os exemplos são simulados, mas o prompt transmite `user_id`, região, assinatura e classificação. O ID não é necessário para o modelo raciocinar sobre o clima; região nem sequer participa do filtro local atual. O modelo também pode chamar `consultar_historico`, que entrega títulos/desfechos associados a um ID. Recomenda-se manter esses cálculos no código e enviar ao provedor apenas o contexto estritamente necessário e pseudonimizado. [prompts/user_prompt.txt](../src/prompts/user_prompt.txt#L13-L23) [src/ferramentas.py](../src/ferramentas.py#L144-L152) [src/catalogo_db.py](../src/catalogo_db.py#L86-L113)
+Catálogo, corpus, usuários e histórico são **sintéticos**
+(`dados/streaming_catalog.json`, `dados/rag_corpus.jsonl`,
+`dados/historico_seed.jsonl`). Em uso real, o texto do pedido, o histórico e a
+classificação do perfil seriam dado pessoal. Ao modelo vai só o texto do pedido.
+O mapa completo (prompt, índice, memória, checkpoint, trace e provedor, com
+finalidade, base legal e prazo) está em `docs/seguranca.md`, seção 5.
 
 ## 7. Avaliação
 
-**Afirmação.** A suíte de avaliação v1.0.0 (2026-10-16) combina os cinco casos rotulados e o verificador de título/status e invariantes com cinco testes unitários de autoridade. A versão/data são declaradas pelo verificador e impressas na execução: [src/verificador.py](../src/verificador.py#L33-L35) [src/verificador.py](../src/verificador.py#L130-L160). Os testes exercitam filtros e bloqueios no caminho real das ferramentas: [tests/test_authority_controls.py](../tests/test_authority_controls.py#L19-L91). O autoteste offline injeta quatro decisões incorretas: [src/verificador.py](../src/verificador.py#L79-L127).
-
-**Resultados existentes.** O benchmark dos cinco casos por modelo, executado em 19/09/2026, está registrado em `logs/benchmark_modelos.json`; os agregados publicados são Ministral 3B 4/5, 8B 5/5 e 14B 5/5, com zero violações para os três. Por fatia, o erro do 3B ocorre em `divergencia_usuario_vs_sistema`; os outros quatro casos passam. [docs/modelos.md](modelos.md#L132-L155) [docs/modelos.md](modelos.md#L173-L197) [logs/benchmark_modelos.json](../logs/benchmark_modelos.json#L1-L40)
-
-**Verificação reproduzida para este card (16/10/2026).** Foram executados `python -m unittest discover -s tests -v`, `python src/verificador.py` e `python src/verificador.py --autoteste`. Resultado: **5 testes unitários aprovados; 5/5 acertos; 0 violações; `RESULTADO: APROVADO`; `AUTOTESTE: OK`**. Os trechos de saída foram preservados em [logs/model-card-verification.txt](../logs/model-card-verification.txt#L1-L28). Isso revalida os registros existentes e exercita diretamente os bloqueios de escrita, mas não é uma nova chamada ao modelo.
-
-**Limites da avaliação.** Cinco casos sintéticos e cinco testes de autoridade não demonstram desempenho em produção nem por demografia, região, perfil infantil, linguagem ou subgrupo real. O verificador offline não é executado como gate dentro do caminho da resposta. Acordo do juiz com avaliação humana, anotação independente e métrica de concordância não foram medidos: `LACUNA [L11]`. O resultado 5/5 é aderência ao pequeno gabarito escrito pelo grupo, não validação humana de qualidade/fidelidade da justificativa. [src/verificador.py](../src/verificador.py#L130-L185) [docs/modelos.md](modelos.md#L132-L155)
+| Afirmação | Evidência |
+|---|---|
+| Golden dataset v1.0.0 com 29 casos em 5 classes, 8 de recusa, 9 de desenvolvimento e 20 sintéticos | `evals/dataset.json`; `docs/evals.md` |
+| Na versão 1.1.0 com o modelo, __% dos casos passam (por classe: __) | ⚠ PREENCHER: `evals/resultados/1.1.0-modelo-<data>/resumo.json` |
+| A 1.1.0 melhorou a classe `seguranca` sem piorar as outras, em relação à 1.0.0 | ⚠ PREENCHER: saída de `evals.comparar` em `docs/evals.md`, seção 4 |
+| O juiz da propriedade "evidência sustenta o pedido" foi validado | ⚠ PREENCHER: `evals/juiz/validacao_resultado.json`. Até lá, **LACUNA [L05]**: o juiz não está adotado |
+| 33 testes passam, 9 deles dos controles desta entrega | `python -m unittest discover -s tests`; `tests/test_controles.py` |
 
 ## 8. Limites conhecidos
 
-**Afirmações sustentadas.** O catálogo tem nove títulos e valores de clima, disponibilidade, classificação e avaliações escritos pelo grupo; não consulta fonte real. O matching de clima é por presença de tags normalizadas no texto, e a documentação reconhece que pode não funcionar com catálogo real. [docs/case.md](case.md#L284-L305) [docs/case.md](case.md#L320-L324) [docs/fontes.md](fontes.md#L24-L35) [src/catalogo_db.py](../src/catalogo_db.py#L86-L113)
-
-O Ministral 3B errou o caso de divergência em 6 de 12 repetições, segundo a análise do grupo. O 8B teve dois picos isolados de latência no benchmark (26,4 s e 15,3 s); a própria documentação diz que são observações, não conclusão estável. [docs/modelos.md](modelos.md#L173-L205)
-
-O motor verifica se a resposta final é JSON válido, mas não valida todas as propriedades nem prova que a justificativa é sustentada pela fonte. Não há avaliador semântico em execução; a auditoria de invariantes ocorre fora do agente. [src/motores.py](../src/motores.py#L232-L241) [docs/case.md](case.md#L313-L324)
-
-**Uso proibido mesmo dentro do tema.** Não usar para recomendar com catálogo/disponibilidade reais, para perfis ou históricos reais, para público infantil real, nem para tomar decisões pagas/irreversíveis; não há fonte de dados confiável, isolamento por usuário ou fluxo de aprovação que sustente esses usos. [docs/fontes.md](fontes.md#L24-L35) [docs/case.md](case.md#L44-L46) [LACUNA L07](#lacunas)
+- **RAG lexical:** a evidência é escolhida por palavras em comum, inclusive "e".
+  O título certo some quando nenhuma palavra coincide (`rec-29`), e o trecho
+  citado pode não ter relação com o pedido (itens da validação do juiz).
+- **Interpretação:** o modelo leu "mal-estar" como `ambiente_pesado` na Parte 2
+  (caso 01) e obedece a instruções no próprio texto (ASI01, `rec-26`).
+- **Catálogo de 9 títulos e 19 trechos:** sem disponibilidade real.
+- **Um turno:** o agente não conversa para refinar; pergunta e encerra.
 
 ## 9. Riscos aceitos
 
-**Afirmação.** O repositório reconhece riscos técnicos concretos: tags de clima feitas à mão e matching por substring; conjunto de avaliação pequeno; oscilação do 3B em divergência; pico de latência; e risco de justificativa inventada não coberto por verificador semântico. As limitações e experimentos estão descritos no case e na análise de modelos. [docs/case.md](case.md#L320-L324) [docs/modelos.md](modelos.md#L173-L205) [docs/case.md](case.md#L313-L324)
-
-**Decisão de aceitação.** Não há registro formal de cada risco como “aceito”, com responsável, razão, controle e prazo de revisão. Portanto, os riscos acima são **conhecidos, mas não classificados como aceitos** por evidência documental. `LACUNA [L12]`: criar registro de risco aprovado pelo grupo; até isso existir, manter o sistema restrito aos dados e demonstrações sintéticos da Parte 1, sem implantação para usuários reais. A escolha documentada do 8B em vez do 3B por estabilidade no caso central é uma decisão de modelo, não aprovação geral dos demais riscos. [docs/modelos.md](modelos.md#L226-L258)
+| Risco | Evidência |
+|---|---|
+| ASI01, injeção direta pelo próprio usuário | `docs/seguranca.md`, seção 4; medido pelo caso `rec-26-injecao-direta` (⚠ PREENCHER o resultado com o modelo) e no A/B da Parte 2 (`logs/ab_frase_prompt.json`, `i02`, 5 de 5) |
+| ASI04, pacotes sem hash | `docs/seguranca.md`, seção 4; versões fixadas em `requirements.txt` |
+| ASI03(c), aprovador sem autenticação | `docs/seguranca.md`, seção 4; LACUNA [L04] |
 
 ## 10. Supervisão humana
 
-**Afirmação.** Na Parte 1 não há pausa para aprovação humana: a ação de escrita é o registro reversível de recomendação. O papel do responsável da conta para aprovar ações pagas está descrito como cenário futuro, não está ligado ao código. [docs/case.md](case.md#L44-L46) [docs/case.md](case.md#L113-L117) [src/catalogo_db.py](../src/catalogo_db.py#L131-L146)
-
-Em erros de modelo/orçamento, a resposta gerada recomenda encaminhar a um humano, porém o CLI apenas constrói o JSON; não existe fila, notificação ou transferência para pessoa. [src/agent.py](../src/agent.py#L210-L220)
-
-`LACUNA [L06]`: não estão definidos um aprovador nominal, o que precisa de aprovação, limiar de gasto/risco, prazo de resposta, canal de aprovação, procedimento de interrupção ou autoridade de suspensão. Para este protótipo, qualquer compra, aluguel, alteração de assinatura ou recomendação fora dos limites deve ser considerada não autorizada e não suportada.
+O responsável pela conta aprova, edita ou rejeita toda gravação, vendo ação,
+título, plataforma, trecho e consequência (`docs/humano.md`). A edição é
+revalidada pelo código (C2). Silêncio vira rejeição em 24 h.
 
 ## 11. Registro e retenção
 
-**Afirmação.** Cada registro de execução contém `case_id`, descrição, query, motor/modelo, orçamento, estado final, motivo de parada, trajetória (passo, nome/argumentos/resultados/erro/latência) e decisão. A saída é gravada em `logs/demo_runs.json`; execução parcial vai para arquivo separado. [src/agent.py](../src/agent.py#L221-L232) [src/agent.py](../src/agent.py#L296-L301) [logs/demo_runs.json](../logs/demo_runs.json#L1-L31)
+**O registro é o trace** (`src/telemetria.py`). Cada chamada ao grafo grava um
+span raiz com entrada, ids dos trechos recuperados, versões do sistema, do
+prompt e do modelo, ferramentas com argumentos e resultado, saída, motivo de
+término e, na retomada, o evento `aprovacao_humana` (quem, quando, o quê, se
+editou).
 
-**Retenção e acesso observáveis.** Logs são arquivos versionados no repositório e não há expiração automática nem lista de pessoas/grupos com acesso. O SQLite é reconstruído (removido e recriado) no começo da execução, mas pode permanecer no disco entre execuções; [`.gitignore`](../.gitignore#L1-L12) evita que o banco derivado entre no Git, não define uma retenção. [src/catalogo_db.py](../src/catalogo_db.py#L164-L174)
+**Retenção e acesso:** os traces de uso ficam em `logs/traces/` (fora do git);
+os da suíte, em `evals/resultados/*/traces.jsonl` (commitados, com usuários
+sintéticos). Prazo declarado: **90 dias** para traces de uso; quem lê: os quatro
+integrantes do grupo, com acesso à máquina. Como o trace guarda o texto do
+pedido e o `user_id`, ele herda a classificação de dado pessoal. **LACUNA
+[L06]**: não há rotina que apague traces com mais de 90 dias.
 
-**Lacunas de auditabilidade e retenção.** `LACUNA [L13]`: não existe política de retenção, acesso, eliminação ou descarte seguro para logs e banco, nem mecanismo demonstrado para atender eliminação de usuário. Os logs não têm timestamp absoluto/ID único por execução e não registram endpoint, região, revisão/commit do código ou prompt/contexto completo; a documentação também registra datas diferentes para a demonstração (18/09 e 19/09). [docs/estado-da-entrega.md](estado-da-entrega.md#L71-L95) [docs/modelos.md](modelos.md#L79-L89) [logs/demo_runs.json](../logs/demo_runs.json#L1-L31)
+### Decisão reconstruída só a partir do trace
+
+⚠ PREENCHER com um trace da rodada com o modelo. Comando:
+
+```bash
+python src/ver_trace.py --arquivo evals/resultados/1.1.0-modelo-<data>/traces.jsonl --conversa rec-28-corpus-envenenado-<data>
+```
+
+Roteiro da reconstrução (o caso `rec-28` é o melhor exemplo, porque mostra um
+controle agindo):
+
+1. **Entrada:** `app.input.message`, `app.input.subscriptions`, `app.input.max_rating` da raiz `invoke`.
+2. **Versões:** `app.versao_sistema`, `app.prompt.versao`, `app.prompt.sha256`, `gen_ai.request.model`.
+3. **O que o modelo entendeu:** `app.mood`; tokens no span `chat`.
+4. **Com base em quê:** `buscar_catalogo` (argumentos e títulos devolvidos),
+   `buscar_evidencias` (ids devolvidos e o id que caiu na quarentena),
+   `app.retrieval.ids` e `app.decision.sources`.
+5. **O que foi proposto e aprovado:** `app.pending_action` na raiz `invoke`;
+   evento `aprovacao_humana` na raiz `resume`.
+6. **O que mudou no mundo:** resultado de `registrar_recomendacao` (id e chave
+   de idempotência); motivo de término `respondeu`.
 
 ## 12. Histórico de mudanças
 
-**Afirmação.** Os marcos documentados incluem: prompt v2 datado de 19/09/2026; correção da fila de chamadas paralelas no motor; benchmark repetido após a correção; e escolha do Ministral 8B. O estado da entrega descreve problemas anteriores e correções, e o histórico Git contém commits associados a mudanças do projeto. [prompts/system.txt](../src/prompts/system.txt#L1-L10) [docs/estado-da-entrega.md](estado-da-entrega.md#L31-L69) [src/motores.py](../src/motores.py#L206-L230) [docs/modelos.md](modelos.md#L157-L169) [docs/modelos.md](modelos.md#L226-L258)
-
-**Histórico Git observado.** `6457b10` (04/09/2026, BRUNA KINJO LUIZ PINTO): definição de tema; `18779ee` (18/09/2026, KaykeAhrens): primeira entrega; `33c83e7` (19/09/2026, marynxs): agente/benchmark/linha de base; `756d5bc` (09/10/2026, Marinix): exercício aula 11. A saída pode ser refeita com `git log --date=short --format='%h %ad %an %s'`. Esses autores são metadados de commit, não prova de revisão ou aprovação por responsável.
-
-`LACUNA [L14]`: não existe changelog completo assinado, ligação entre release e commit, registro de revisão/aprovação por mudança ou responsável que autorizou a implantação. O histórico de commits ajuda a reconstruir alterações, mas não prova governança de release.
+Em `docs/mudancas.md`.
 
 ## Lacunas
 
-| ID | O que falta provar | Correção proposta | Prioridade |
-|---|---|---|---|
-| **L01** | Responsável nomeado por incidente, operação, dados e suspensão. | Nomear titular e substituto, canais de contato e responsabilidade de cada integrante. | Alta antes de qualquer uso real. |
-| **L02** | Versão/release do sistema e commit usado em cada execução. | Adotar versão semântica ou ID de build; registrar commit, hashes de prompt/configuração e versão do verificador no log. | Alta para auditoria. |
-| **L03** | Usos autorizados/excluídos e condições de implantação aprovados. | Publicar política curta de escopo, usuários elegíveis, aviso/transparência e proibição de uso com dados reais até fechamento das demais lacunas. | Alta antes de qualquer uso real. |
-| **L04** | Privilégios reais da chave do provedor e do processo que acessa SQLite. | Registrar provedor/conta/escopos sem expor segredo; usar chave dedicada de menor privilégio, rotação e controle de acesso ao arquivo. | Alta. |
-| **L05** | Teto financeiro e limite firme por chamada/conta; o teto de tokens é checado após a resposta e não limita gasto monetário. | Configurar orçamento/alerta no provedor e impor limite de tokens/timeout antes da chamada, com teste de ultrapassagem. | Alta. |
-| **L06** | Aprovador, limiar, prazo, canal humano e kill switch/runbook. | Para a Parte 1, declarar formalmente que só são permitidas recomendação e escrita reversível; para qualquer ação futura paga, implementar aprovação fora do modelo e suspensão operacional testada. | Alta antes de adicionar ação externa. |
-| **L07** | Vínculo entre `user_id` da ferramenta e usuário autenticado; isolamento de histórico por usuário. | Remover `user_id` dos argumentos públicos e injetar identidade confiável no servidor; adicionar testes negativos de acesso cruzado. | **Parcialmente resolvida em 2026-10-23:** argumento removido e teste negativo criado; falta autenticação real da sessão. |
-| **L08** | Garantia em código de título candidato, schema semântico, plataforma compatível e justificativa sustentada. | Usar allowlist de ferramentas; validar saída com schema estrito; validar título/plataforma/evidência no código e exercitar controles com testes automatizados no caminho de escrita/retorno. | Alta. |
-| **L09** | Snapshot/data do modelo, endpoint efetivo, região, residência, retenção e política de treino do provedor. | Fixar provedor, endpoint e ID de modelo; guardar metadados não secretos por execução; anexar termos oficiais vigentes e configuração de retenção/região. | Crítica antes de enviar dados reais. |
-| **L10** | Base legal art. 7º, transparência, prazos e descarte para dados pessoais reais em cada destino. | Manter dados sintéticos até decisão do controlador; antes de piloto real, documentar finalidade, hipótese legal aplicável, minimização, retenção, acesso e processo de eliminação por destino. | Crítica antes de dados reais. |
-| **L11** | Concordância do juiz com avaliação humana, anotação independente, representatividade e avaliação por fatia em dados reais. | Definir protocolo de avaliação humana, comparar rótulos/justificativas, reportar concordância e expandir a suíte v1.0.0 com casos representativos por fatia. | Alta antes de afirmar qualidade. |
-| **L12** | Decisão explícita de aceitar (ou mitigar/rejeitar) cada risco, com responsável e prazo. | Criar registro de riscos, justificativa, mitigação, risco residual, aprovador e data de revisão; não inferir aceitação pelo silêncio. | Alta antes de qualquer uso real. |
-| **L13** | Política de retenção/acesso/eliminação e log íntegro com timestamp, ID de execução, contexto e metadados suficientes. | Definir TTL e perfis de acesso; adicionar identificador e timestamp; registrar contexto mínimo, modelo/provedor/prompt/commit e resultado; testar expurgo. | Alta. |
-| **L14** | Aprovação formal das mudanças e relação entre versão publicada e commits. | Exigir revisão/aprovação registrada por release e changelog com autor, revisor, evidência de testes e rollback. | Média para protótipo; alta antes de produção. |
-
-## Resposta à pergunta de auditoria
-
-**Para as cinco execuções sintéticas versionadas, em parte sim:** um auditor consegue abrir o caso, a trajetória, o resultado e o verificador, e conferir assinatura, classificação, repetição e existência do título. A execução de conferência reproduzida para este card deu 5/5 e zero violações; isso prova apenas esses casos e essas invariantes.
-
-**Para uma decisão concreta de uso real, ainda não:** não há registro completo do contexto da conta, endpoint/região do provedor, versão/commit da execução nem identidade confiável associada ao `user_id`; além disso, pertença do título aos candidatos, validade semântica da saída e fidelidade da justificativa não são controladas fora do prompt. O isolamento de usuário também não é garantido. Portanto, o card atual permite auditoria limitada do protótipo, mas não prova em geral que qualquer decisão esteve dentro da autoridade do agente. Fechar prioritariamente `L07`–`L10` e `L14` é condição para essa resposta mudar.
+| Id | Lacuna | Correção proposta |
+|---|---|---|
+| L01 | Chave sem escopo nem limite configurável | Conta paga com chave por ambiente e limite de gasto no console |
+| L02 | Sem teto de gasto em dinheiro | Configurar no console ao sair da camada grátis |
+| L03 | Sem chave de suspensão que pare escritas | Variável `AGENTE_SUSPENSO` lida no nó `persist`, fail-closed, com teste |
+| L04 | Aprovador sem autenticação | O app hospedeiro autentica e manda `approver`; o grafo recusa resposta sem ele |
+| L05 | Juiz não adotado até a validação | Rotular os 20 itens e rodar `evals.validar_juiz` |
+| L06 | Sem rotina de expiração de traces | Rodar com o cron da expiração: apagar `logs/traces/*.jsonl` com mais de 90 dias |
+| L07 | Checkpoint guarda a resposta bruta do aprovador, antes de C4, sem prazo | Limpar a resposta antes do `Command(resume)` no app e expirar threads concluídas |
+| L08 | Política de retenção do provedor não verificada | Ler e registrar os termos da API da Mistral antes de dado real |

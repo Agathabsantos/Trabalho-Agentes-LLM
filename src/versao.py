@@ -4,4 +4,4 @@ Sobe a cada mudanca que pode alterar o comportamento medido pela suite
 (evals/). O historico fica em docs/mudancas.md.
 """
 
-VERSAO_SISTEMA = "1.0.0"
+VERSAO_SISTEMA = "1.1.0"
