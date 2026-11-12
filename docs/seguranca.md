@@ -204,13 +204,14 @@ do perfil (que pode indicar criança) são dado pessoal.
 
 ## 6. Nenhuma chave no histórico
 
-Executado em 2026-11-11 na cópia clonada de `main`:
+Executado em 2026-11-12 num clone novo de `main`, depois do push da Parte 3:
 
 ```text
 $ git log --all -- .env
 (vazio)
 
 $ git log --all -S "OPENAI_API_KEY=" --oneline
+632558f Parte 3: controles de seguranca e documentacao (v1.1.0)
 33c83e7 Parte 1: agente rodando com modelo, benchmark dos candidatos e linha de base medida
 18779ee primeira entrega quase concluída
 ```
@@ -225,7 +226,9 @@ $ git show 33c83e7 | grep "OPENAI_API_KEY="
 +OPENAI_API_KEY=
 ```
 
-As duas ocorrências são o `.env.example` com o texto de exemplo
-`seu_token_aqui`, depois trocado por vazio. Nenhuma chave real foi commitada,
+`632558f` aparece porque é o commit que criou este documento, que cita o
+próprio comando e as linhas abaixo. As outras duas ocorrências são o
+`.env.example` com o texto de exemplo `seu_token_aqui`, depois trocado por
+vazio. Nenhuma chave real foi commitada,
 então não houve chave a revogar. O `.env` está no `.gitignore` desde o primeiro
 commit.
