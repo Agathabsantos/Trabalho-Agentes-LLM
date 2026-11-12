@@ -53,6 +53,7 @@ from versao import VERSAO_SISTEMA  # noqa: E402
 CHECKPOINT_PATH = ROOT / "dados" / "checkpoints.sqlite"
 MAX_NODES = 12
 MAX_RUNTIME_SECONDS = 20
+ESPERAS_429 = (2, 4, 8)  # segundos; soma 14 s, dentro do teto de 20 s
 APPROVAL_TIMEOUT_SECONDS = 24 * 60 * 60
 
 Mood = Literal[
@@ -297,14 +298,26 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
                      "gen_ai.request.max_tokens": 300,
                      "gen_ai.output.type": "json"},
                 ) as chat_span:
-                    answer = client.chat.completions.create(
-                        model=configured_model,
-                        messages=[{"role": "system", "content": prompt},
-                                  {"role": "user", "content": message}],
-                        response_format=INTERPRETATION_RESPONSE_FORMAT,
-                        max_tokens=300,
-                        temperature=float(configured_temperature),
-                    )
+                    # 429 (limite de requisicoes) espera e tenta de novo, dentro do
+                    # teto de tempo da execucao; qualquer outro erro sobe na hora.
+                    from openai import RateLimitError
+                    for tentativa in range(len(ESPERAS_429) + 1):
+                        try:
+                            answer = client.chat.completions.create(
+                                model=configured_model,
+                                messages=[{"role": "system", "content": prompt},
+                                          {"role": "user", "content": message}],
+                                response_format=INTERPRETATION_RESPONSE_FORMAT,
+                                max_tokens=300,
+                                temperature=float(configured_temperature),
+                            )
+                            break
+                        except RateLimitError:
+                            if tentativa == len(ESPERAS_429):
+                                raise
+                            chat_span.add_event("rate_limit_429", {"espera_s": ESPERAS_429[tentativa]})
+                            time.sleep(ESPERAS_429[tentativa])
+                    chat_span.set_attribute("app.tentativas", tentativa + 1)
                     usage = getattr(answer, "usage", None)
                     model_tokens = getattr(usage, "completion_tokens", 0) or 0
                     model_input_tokens = getattr(usage, "prompt_tokens", 0) or 0
