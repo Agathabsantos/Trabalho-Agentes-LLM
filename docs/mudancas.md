@@ -4,11 +4,6 @@ O que mudou no sistema, por versão, com o commit. A versão fica em
 `src/versao.py` e vai para todo trace (`app.versao_sistema`); a suíte se recusa
 a rodar com `--versao` diferente do código.
 
-## Correções apontadas na Parte 2
-
-⚠ PREENCHER: o que a correção da Parte 2 apontou, o que mudou e o commit. Se a
-correção ainda não voltou, escrever isso aqui com a data.
-
 ## Depois da rodada 1.1.0: correções de registro (sem mudança de versão)
 
 Não mudam o que a suíte mede, por isso a versão continua 1.1.0.
