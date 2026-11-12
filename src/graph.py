@@ -47,6 +47,8 @@ from catalogo_db import (  # noqa: E402
     teto_classificacao,
 )
 from rag import buscar_evidencias  # noqa: E402
+import telemetria  # noqa: E402
+from versao import VERSAO_SISTEMA  # noqa: E402
 
 CHECKPOINT_PATH = ROOT / "dados" / "checkpoints.sqlite"
 MAX_NODES = 12
@@ -135,6 +137,9 @@ class AgentState(TypedDict, total=False):
     started_at: float
     model_calls: int
     model_tokens: int
+    model_input_tokens: int
+    prompt_version: str
+    controles: Annotated[list[dict], list.__add__]
     model_name: str | None
     temperature: str
     decision_source: str
@@ -236,6 +241,11 @@ def _result(status: str, reason: str, *, title: str | None = None,
     ).model_dump()
 
 
+def _versao_prompt(prompt: str) -> str | None:
+    match = re.search(r"^# versao:\s*(\S+)", prompt, re.MULTILINE)
+    return match.group(1) if match else None
+
+
 def _event(node: str, **details) -> dict:
     return {"node": node, "at": time.time(), **details}
 
@@ -253,17 +263,23 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
         configured_model = (os.environ.get("MODEL_NAME", "ministral-8b-2512")
                     if os.environ.get("OPENAI_API_KEY") else None)
         configured_temperature = os.environ.get("TEMPERATURE") or "0.2"
+        prompt_version = _versao_prompt(prompt)
         reference_error = None
         with CatalogoDB(db_path) as db:
             reference = state.get("reference_title") or _reference(message, db)
             unknown_reference = _unknown_reference(message, reference)
             if unknown_reference:
-                try:
-                    db.obter_titulo(unknown_reference)
-                except RegistroNaoEncontrado:
-                    reference_error = f"registro_inexistente:{unknown_reference}"
+                with telemetria.span_ferramenta("consultar_titulo", {"titulo": unknown_reference}) as span:
+                    try:
+                        db.obter_titulo(unknown_reference)
+                        telemetria.resultado_ferramenta(span, {"encontrado": True})
+                    except RegistroNaoEncontrado:
+                        # Registro ausente e resultado de dominio, nao falha da ferramenta.
+                        reference_error = f"registro_inexistente:{unknown_reference}"
+                        telemetria.resultado_ferramenta(span, {"encontrado": False})
         model_calls = 0
         model_tokens = 0
+        model_input_tokens = 0
         decision_source = "regras_locais"
         if message and os.environ.get("OPENAI_API_KEY"):
             try:
@@ -275,18 +291,32 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
                     timeout=MAX_RUNTIME_SECONDS,
                     max_retries=0,
                 )
-                answer = client.chat.completions.create(
-                    model=configured_model,
-                    messages=[{"role": "system", "content": prompt},
-                              {"role": "user", "content": message}],
-                    response_format=INTERPRETATION_RESPONSE_FORMAT,
-                    max_tokens=300,
-                    temperature=float(configured_temperature),
-                )
+                with telemetria.span_chat(
+                    configured_model, telemetria.provedor_de(os.environ.get("LLM_BASE_URL")),
+                    {"gen_ai.request.temperature": float(configured_temperature),
+                     "gen_ai.request.max_tokens": 300,
+                     "gen_ai.output.type": "json"},
+                ) as chat_span:
+                    answer = client.chat.completions.create(
+                        model=configured_model,
+                        messages=[{"role": "system", "content": prompt},
+                                  {"role": "user", "content": message}],
+                        response_format=INTERPRETATION_RESPONSE_FORMAT,
+                        max_tokens=300,
+                        temperature=float(configured_temperature),
+                    )
+                    usage = getattr(answer, "usage", None)
+                    model_tokens = getattr(usage, "completion_tokens", 0) or 0
+                    model_input_tokens = getattr(usage, "prompt_tokens", 0) or 0
+                    chat_span.set_attributes({
+                        "gen_ai.response.model": getattr(answer, "model", None) or configured_model,
+                        "gen_ai.usage.input_tokens": model_input_tokens,
+                        "gen_ai.usage.output_tokens": model_tokens,
+                        "gen_ai.response.finish_reasons": [answer.choices[0].finish_reason or "desconhecido"],
+                    })
                 parsed = Interpretation.model_validate_json(answer.choices[0].message.content or "{}")
                 moods = [parsed.mood] if parsed.mood else []
                 model_calls = 1
-                model_tokens = getattr(getattr(answer, "usage", None), "completion_tokens", 0) or 0
                 decision_source = "modelo"
                 model_out_of_scope = parsed.intent == "out_of_scope"
                 model_ambiguous = parsed.ambiguous
@@ -298,6 +328,8 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
                 return {"reference_title": reference, "route": "finish", "decision": result,
                         "started_at": state.get("started_at") or time.monotonic(),
                         "model_calls": 1, "model_tokens": model_tokens,
+                        "model_input_tokens": model_input_tokens,
+                        "prompt_version": prompt_version,
                         "model_name": configured_model, "temperature": configured_temperature,
                         "decision_source": "modelo_com_erro",
                         "prompt_manifest": prompt_manifest,
@@ -356,6 +388,8 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
             "started_at": started_at,
             "model_calls": model_calls,
             "model_tokens": model_tokens,
+            "model_input_tokens": model_input_tokens,
+            "prompt_version": prompt_version,
             "model_name": configured_model,
             "temperature": configured_temperature,
             "retrieval_calls": 0,
@@ -374,22 +408,33 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
             return {"route": "finish", "decision": result,
                     "trajectory": [_event("retrieve", result="timeout", retrieval_calls=0)]}
         with CatalogoDB(db_path) as db:
-            history = db.historico(state["user_id"])
-            memory_hits = db.buscar_episodios(state["user_id"], state["mood"], limite=3)
-            semantic_memory = db.obter_preferencia(state["user_id"])
+            with telemetria.span_ferramenta("consultar_historico", {"user_id": state["user_id"]}) as span:
+                history = db.historico(state["user_id"])
+                telemetria.resultado_ferramenta(span, {"titulos": [row["titulo"] for row in history]})
+            with telemetria.span_ferramenta("ler_memoria", {"user_id": state["user_id"], "mood": state["mood"]}) as span:
+                memory_hits = db.buscar_episodios(state["user_id"], state["mood"], limite=3)
+                semantic_memory = db.obter_preferencia(state["user_id"])
+                telemetria.resultado_ferramenta(span, {"episodios": len(memory_hits),
+                                                       "preferencia": bool(semantic_memory)})
             excluded = {row["titulo"] for row in history}
             if state.get("reference_title"):
                 excluded.add(state["reference_title"])
-            matches = db.buscar_por_clima(
-                termos_normalizados=normalizar(state["mood"]),
-                plataformas=state.get("subscriptions", []),
-                classificacao_max=state.get("max_rating"),
-                excluir=excluded,
-            )
+            argumentos = {"mood": state["mood"], "plataformas": state.get("subscriptions", []),
+                          "classificacao_max": state.get("max_rating"), "excluir": sorted(excluded)}
+            with telemetria.span_ferramenta("buscar_catalogo", argumentos) as span:
+                matches = db.buscar_por_clima(
+                    termos_normalizados=normalizar(state["mood"]),
+                    plataformas=state.get("subscriptions", []),
+                    classificacao_max=state.get("max_rating"),
+                    excluir=excluded,
+                )
+                telemetria.resultado_ferramenta(span, {"titulos": [m["titulo"] for m in matches]})
         eligible = {candidate["titulo"] for candidate in matches}
-        evidence = buscar_evidencias(
-            f"{state['mood']} {state['message']}", eligible, limite=12
-        ) if eligible else []
+        evidence = []
+        if eligible:
+            with telemetria.span_ferramenta("buscar_evidencias", {"titulos": sorted(eligible), "limite": 12}) as span:
+                evidence = buscar_evidencias(f"{state['mood']} {state['message']}", eligible, limite=12)
+                telemetria.resultado_ferramenta(span, {"ids": [item["id"] for item in evidence]})
         evidence_by_title: dict[str, list[dict]] = {}
         for item in evidence:
             evidence_by_title.setdefault(item["title"], []).append(item)
@@ -492,13 +537,17 @@ def create_graph(db_path: Path = DB_PATH, checkpointer=None):
 
     def persist(state: AgentState) -> dict:
         action = state["pending_action"]
-        with CatalogoDB(db_path) as db:
+        with CatalogoDB(db_path) as db, telemetria.span_ferramenta("registrar_recomendacao", {
+                "user_id": state["user_id"], "titulo": action["title"],
+                "chave_idempotencia": state["idempotency_key"],
+                "lembrar_preferencia": bool(action.get("remember_preference"))}) as span:
             saved = db.registrar_idempotente(
                 state["user_id"], action["title"], "recomendado",
                 f"{state['mood']} | {action['reason']}", state["idempotency_key"],
                 preferencia=(f"preferencia explicitamente autorizada: {state['mood']}"
                              if action.get("remember_preference") else None),
             )
+            telemetria.resultado_ferramenta(span, saved)
         evidence = next((item for item in state.get("current_evidence", [])
                          if item["id"] == action["evidence_id"]), None)
         result = _result(
@@ -552,13 +601,45 @@ def fechar_graph() -> None:
 def invoke_request(request: Request, *, checkpointer=None, db_path: Path = DB_PATH,
                    recursion_limit: int = MAX_NODES):
     graph = create_graph(db_path, checkpointer) if checkpointer is not None else get_graph()
+    return invocar(graph, request, recursion_limit=recursion_limit)
+
+
+def invocar(graph, request: Request, *, recursion_limit: int = MAX_NODES) -> dict:
+    """Ponto de entrada de um pedido novo: CLI, demo e suite passam por aqui."""
     thread_id = request.get("session_id") or request.get("user_id", "anonimo")
     graph_input = dict(request)
     graph_input["messages"] = [{"role": "user", "content": request.get("message", "")}]
-    return graph.invoke(graph_input, config={
-        "configurable": {"thread_id": thread_id},
-        "recursion_limit": recursion_limit,
-    })
+    with telemetria.span_raiz("invoke", thread_id, {
+        "app.input.message": request.get("message", ""),
+        "app.input.subscriptions": list(request.get("subscriptions", [])),
+        "app.input.max_rating": request.get("max_rating"),
+        "app.user_id": request.get("user_id"),
+        "app.case_id": request.get("case_id"),
+    }) as span:
+        try:
+            state = graph.invoke(graph_input, config={
+                "configurable": {"thread_id": thread_id},
+                "recursion_limit": recursion_limit,
+            })
+        except Exception as exc:
+            telemetria.fechar_raiz(span, None, excecao=exc)
+            raise
+        telemetria.fechar_raiz(span, state)
+        return state
+
+
+def _retomar(graph, thread_id: str, resposta: dict, operacao: str) -> dict:
+    with telemetria.span_raiz(operacao, thread_id, {}) as span:
+        try:
+            state = graph.invoke(Command(resume=resposta), config={
+                "configurable": {"thread_id": thread_id},
+                "recursion_limit": MAX_NODES,
+            })
+        except Exception as exc:
+            telemetria.fechar_raiz(span, None, excecao=exc)
+            raise
+        telemetria.fechar_raiz(span, state)
+        return state
 
 
 def resumir(thread_id: str, resposta: dict, graph=None, db_path: Path = DB_PATH) -> dict:
@@ -570,7 +651,11 @@ def resumir(thread_id: str, resposta: dict, graph=None, db_path: Path = DB_PATH)
             and snapshot.values.get("human_response") == normalizada
             and snapshot.values.get("idempotency_key")):
         action = snapshot.values["pending_action"]
-        with CatalogoDB(db_path) as db:
+        with telemetria.span_raiz("resume_duplicado", thread_id, {}) as raiz, \
+                CatalogoDB(db_path) as db, \
+                telemetria.span_ferramenta("registrar_recomendacao", {
+                    "user_id": snapshot.values["user_id"], "titulo": action["title"],
+                    "chave_idempotencia": snapshot.values["idempotency_key"]}) as span:
             duplicate = db.registrar_idempotente(
                 snapshot.values["user_id"], action["title"], "recomendado",
                 f"{snapshot.values['mood']} | {action['reason']}",
@@ -580,12 +665,11 @@ def resumir(thread_id: str, resposta: dict, graph=None, db_path: Path = DB_PATH)
                     if action.get("remember_preference") else None
                 ),
             )
+            telemetria.resultado_ferramenta(span, duplicate)
+            telemetria.fechar_raiz(raiz, snapshot.values)
         return {**snapshot.values, "duplicate_resume": True,
                 "duplicate_write_result": duplicate}
-    return graph.invoke(Command(resume=normalizada), config={
-        **config,
-        "recursion_limit": MAX_NODES,
-    })
+    return _retomar(graph, thread_id, normalizada, "resume")
 
 
 def expirar_pendencia(thread_id: str, graph=None, agora: float | None = None):
@@ -599,9 +683,9 @@ def expirar_pendencia(thread_id: str, graph=None, agora: float | None = None):
     deadline = action.get("created_at", 0) + action.get("deadline_seconds", APPROVAL_TIMEOUT_SECONDS)
     if (agora if agora is not None else time.time()) < deadline:
         return None
-    return graph.invoke(Command(resume={
+    return _retomar(graph, thread_id, {
         "decision": "reject", "reason": "prazo de aprovacao expirado",
-    }), config={**config, "recursion_limit": MAX_NODES})
+    }, "expire")
 
 
 def varrer_pendencias(graph=None, agora: float | None = None,

@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from catalogo_db import CatalogoDB, construir_banco  # noqa: E402
-from graph import create_graph, resultado_publico, resumir  # noqa: E402
+from graph import create_graph, invocar, resultado_publico, resumir  # noqa: E402
 from langgraph.checkpoint.sqlite import SqliteSaver  # noqa: E402
 
 OUTPUT_PATH = ROOT / "logs" / "part2_runs.json"
@@ -104,10 +104,7 @@ def _run_one(graph, case: dict, db_path: Path, provenance: dict) -> dict:
         "case_id": case["case_id"],
     }
     thread_id = request["session_id"]
-    state = graph.invoke(
-        {**request, "messages": [{"role": "user", "content": case["message"]}]},
-        config={"configurable": {"thread_id": thread_id}, "recursion_limit": 12},
-    )
+    state = invocar(graph, request)
     pause = resultado_publico(state)
     pending_action = pause.get("pending_action")
     human_response = case.get("approval")

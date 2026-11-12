@@ -1,0 +1,226 @@
+{
+  "rubrica": "v1.0.0",
+  "instrucoes": "Preencha rotulo_humano com 'sustenta' ou 'nao_sustenta' SEM olhar a saida do juiz, rotulado_por com o nome de quem rotulou, e nota_humana com uma frase dizendo por que. Depois rode: python -m evals.validar_juiz",
+  "itens": [
+    {
+      "id": "j01",
+      "pedido": "Curti Severance pelo mal-estar constante. Indica algo parecido.",
+      "titulo": "Dark",
+      "trecho": "Sentimento de que algo esta errado o tempo todo.",
+      "evidence_id": "dark-review-2",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j02",
+      "pedido": "Quero algo leve e sem ficar pensando demais.",
+      "titulo": "The Office",
+      "trecho": "Bem leve e engracada.",
+      "evidence_id": "office-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j03",
+      "pedido": "Quero misterio e estranheza. Me recomenda algo.",
+      "titulo": "The OA",
+      "trecho": "O misterio e a sensacao de desconforto se sobrepoem.",
+      "evidence_id": "oa-review-2",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j04",
+      "pedido": "Quero algo leve e cotidiano, para rir.",
+      "titulo": "The Office",
+      "trecho": "Bem leve e engracada.",
+      "evidence_id": "office-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j05",
+      "pedido": "Quero uma serie inteligente, sobre determinacao e disciplina.",
+      "titulo": "The Queen's Gambit",
+      "trecho": "O talento e a disciplina sao o centro.",
+      "evidence_id": "queen-review-2",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j06",
+      "pedido": "Quero algo melancolico, sobre luto. Indica uma serie?",
+      "titulo": "The Leftovers",
+      "trecho": "A serie e emocionalmente densa.",
+      "evidence_id": "leftovers-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j07",
+      "pedido": "Me recomenda uma serie de suspense, bem quieta e silenciosa.",
+      "titulo": "Servant",
+      "trecho": "A ansiedade e o desconforto sao constantes.",
+      "evidence_id": "servant-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j08",
+      "pedido": "Quero algo caotico e intenso para assistir hoje.",
+      "titulo": "The Bear",
+      "trecho": "Caotico e intenso.",
+      "evidence_id": "bear-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j09",
+      "pedido": "Quero uma serie de misterio surreal. Indica?",
+      "titulo": "The OA",
+      "trecho": "O misterio e a sensacao de desconforto se sobrepoem.",
+      "evidence_id": "oa-review-2",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j10",
+      "pedido": "Quero algo leve e engracado para assistir.",
+      "titulo": "Only Murders in the Building",
+      "trecho": "O clima e leve, mas curioso.",
+      "evidence_id": "murders-review-2",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j11",
+      "pedido": "Indica uma serie com clima de mal estar, tipo desconforto o tempo todo.",
+      "titulo": "Severance",
+      "trecho": "A sensacao de mal estar e constante.",
+      "evidence_id": "severance-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j12",
+      "pedido": "Quero algo sarcastico e leve.",
+      "titulo": "The Office",
+      "trecho": "Bem leve e engracada.",
+      "evidence_id": "office-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j13",
+      "pedido": "Quero uma serie sobre superacao e ascensao.",
+      "titulo": "The Queen's Gambit",
+      "trecho": "Muito inspiradora e focada.",
+      "evidence_id": "queen-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j14",
+      "pedido": "Quero algo intenso, bem frenetico.",
+      "titulo": "The Bear",
+      "trecho": "Caotico e intenso.",
+      "evidence_id": "bear-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j15",
+      "pedido": "Me recomenda algo com misterio e viagem no tempo.",
+      "titulo": "Dark",
+      "trecho": "Sentimento de que algo esta errado o tempo todo.",
+      "evidence_id": "dark-review-2",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j16",
+      "pedido": "Quero algo pesado e denso, emocionalmente.",
+      "titulo": "The Leftovers",
+      "trecho": "A serie e emocionalmente densa.",
+      "evidence_id": "leftovers-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j17",
+      "pedido": "Quero algo surreal e estranho.",
+      "titulo": "The OA",
+      "trecho": "A atmosfera estranha e cativante.",
+      "evidence_id": "oa-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j18",
+      "pedido": "Quero algo leve com um pouco de enigma.",
+      "titulo": "Only Murders in the Building",
+      "trecho": "O clima e leve, mas curioso.",
+      "evidence_id": "murders-review-2",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j19",
+      "pedido": "Quero algo carismatico e leve para ver em familia.",
+      "titulo": "Only Murders in the Building",
+      "trecho": "O clima e leve, mas curioso.",
+      "evidence_id": "murders-review-2",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    },
+    {
+      "id": "j20",
+      "pedido": "Quero uma serie de misterio para maratonar.",
+      "titulo": "Severance",
+      "trecho": "A sensacao de mal estar e constante.",
+      "evidence_id": "severance-review-1",
+      "origem": "saida do agente (regras locais, v1.0.0, 2026-11-11)",
+      "rotulo_humano": null,
+      "rotulado_por": null,
+      "nota_humana": ""
+    }
+  ]
+}

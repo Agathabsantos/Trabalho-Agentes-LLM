@@ -12,6 +12,8 @@ from unittest import mock
 from typing import Annotated, TypedDict
 
 ROOT = Path(__file__).resolve().parents[1]
+# Os testes nao gravam trace em logs/: o destino vai para um arquivo temporario.
+os.environ.setdefault("TRACE_FILE", str(Path(tempfile.gettempdir()) / "agente-testes-traces.jsonl"))
 sys.path.insert(0, str(ROOT / "src"))
 
 from langgraph.checkpoint.sqlite import SqliteSaver  # noqa: E402

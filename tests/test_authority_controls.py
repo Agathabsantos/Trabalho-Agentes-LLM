@@ -4,12 +4,15 @@ Versão publicada em 2026-10-16. Exercita Ferramentas, não apenas o verificador
 offline de decisões já produzidas.
 """
 
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+# Os testes nao gravam trace em logs/: o destino vai para um arquivo temporario.
+os.environ.setdefault("TRACE_FILE", str(Path(tempfile.gettempdir()) / "agente-testes-traces.jsonl"))
 sys.path.insert(0, str(ROOT / "src"))
 
 from catalogo_db import CatalogoDB, construir_banco  # noqa: E402
