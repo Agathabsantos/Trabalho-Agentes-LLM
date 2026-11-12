@@ -44,10 +44,9 @@ histórico deve ganhar, se a memória semântica deve existir), `origem`, `class
 resposta na base por assunto, classificação ou assinatura), mais os 4 de
 esclarecimento.
 
-**Sintéticos revisados:** ⚠ PREENCHER. Os 20 casos sintéticos estão com
-`revisado_por: "PENDENTE"`. Cada integrante revisa uma parte, confere o esperado
-contra o catálogo (`dados/streaming_catalog.json`) e troca `PENDENTE` pelo
-próprio nome.
+**Sintéticos revisados:** os 20 casos sintéticos foram revisados por Agatha em
+2026-11-12, conferindo pedido, assinatura, perfil e esperado de cada um contra o
+catálogo (`revisado_por` em `evals/dataset.json`). Nenhum esperado foi alterado.
 
 Dois casos foram escritos para expor defeitos conhecidos, não para passar:
 
